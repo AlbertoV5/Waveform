@@ -3,8 +3,11 @@
 
 Python 3.7
 
-Numpy
-Scipy
+Required:
+- Numpy
+- Scipy
+- Matplot
+- CV2 (for generating video from matplot graphs)
 
 Read a song and output frequency spectrum of each 16th subdivision.
 
@@ -14,3 +17,4 @@ To do:
 - BPM detection
 - Comparing pitch
 - Time Grid / Clock / BPM
+- Add the audio file to the video
