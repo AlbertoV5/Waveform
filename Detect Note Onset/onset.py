@@ -46,12 +46,14 @@ class Audio():
     
     def Plot_NoteOnset(self):
         self.y = [i[0] for i in self.notes]
-        self.x = [i[1] for i in self.notes]
+        self.x = [i[1]/self.sampfreq for i in self.notes]
         self.l = [i[2]-i[1] for i in self.notes] 
+        plt.xlabel("Time (s)")
+        plt.ylabel("Frequency (Hz)")
         plt.scatter(self.x,self.y)
     
     def Get_BPM(self):
-        x = self.x
+        x = [i[1] for i in self.notes]
         d = [x[i+1]-x[i] for i in range(len(x)) if i < len(x)-1]
         beat_s = most_frequent(d)/self.sampfreq
         bpm = 60/beat_s
