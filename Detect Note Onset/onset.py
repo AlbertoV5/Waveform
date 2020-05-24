@@ -9,12 +9,13 @@ import scipy
 import scipy.fftpack as fftpk
 import matplotlib.pyplot as plt
 
-sampfreq, data = wavfile.read("lektrique.wav")
+sampfreq, data = wavfile.read("drums1.wav")
 data = data/65536
 unit = 1024
-threshold = .8
+chunk_size = 2048
+threshold = 50
 LPF = 200
-unit_range = 1
+HPF = 20
 
 def Plot(x, y):    
     fig1,ax1 = plt.subplots(subplot_kw=dict())
@@ -25,16 +26,17 @@ def ReadChunk(chunk):
     FFT = abs(scipy.fft.fft(chunk))
     freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
     
-    bands = freqs[abs(freqs) < LPF]
-    filtered = FFT[:len(bands)]
+    low_pass_filter = freqs[abs(freqs) < LPF]
+    high_pass_filter = low_pass_filter[abs(low_pass_filter) > HPF]
+                        
+    filtered = FFT[:len(high_pass_filter)]
     
     if np.amax(filtered) > threshold:
         index = np.where(filtered == np.amax(filtered))
-        frequency = max((abs(bands[index])))
-        print(frequency)
+        frequency = abs(high_pass_filter[index])
         #Plot(freqs, FFT)
     else:
-        frequency = 0
+        frequency = -1
     return frequency
 
 def ReadPitch(chunk):
@@ -49,29 +51,24 @@ def avg(List):
     return sum(List)/len(List)
 
 def Process():  
-    pitch_sustain, notes = 0, []
-    pitch_collection = []
+    pitch_sustain, notes = -1, []
+    pitch_start,note_on = 0,0
     for i in range(int(len(data)/unit)):
+        start = unit*(i)
+        end = unit*(i) + chunk_size
+        pitch = ReadChunk(data[start:end])
         try:
-            start = unit*(i)
-            end = unit*(i+unit_range)
-            pitch = ReadChunk(data[start:end])
-            if pitch > 0 and pitch != pitch_sustain: #Note change
+            if pitch != -1 and pitch != pitch_sustain: #Note change
                 note_on = start
                 pitch_sustain = pitch
                 pitch_start = pitch
-            elif pitch > 0 and pitch == pitch_sustain:
-                pitch_collection.append(pitch)
-            elif pitch == 0 and pitch_sustain > 0:
+            elif pitch == -1 and pitch_sustain>-1:
                 note_release = start
-                avg_pitch = avg(pitch_collection)
-                notes.append([avg_pitch, note_on, note_release])
+                notes.append([pitch_start, note_on, note_release])
                 pitch_sustain = pitch
-                pitch_collection = []
-                pass
         except:
             pass
-     
+
     y = [i[0] for i in notes]
     x = [i[1] for i in notes]
     l = [i[2]-i[1] for i in notes] 
@@ -82,13 +79,13 @@ def Process():
 notes = Process()
 
 x = notes[1]
+print(notes[0])
 d = [x[i+1]-x[i] for i in range(len(x)) if i < len(x)-1]
-
-print(most_frequent(d))
 
 beat_s = most_frequent(d)/sampfreq
 bpm = 60/beat_s
 
+print("BPM is:")
 print(bpm)
 
 
