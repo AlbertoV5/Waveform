@@ -52,11 +52,16 @@ class Audio():
         plt.ylabel("Frequency (Hz)")
         plt.scatter(self.x,self.y)
     
-    def Get_BPM(self):
+    def Get_BPM(self, minBPM = 60, maxBPM = 200):
         x = [i[1] for i in self.notes]
         d = [x[i+1]-x[i] for i in range(len(x)) if i < len(x)-1]
         beat_s = most_frequent(d)/self.sampfreq
         bpm = 60/beat_s
+        while bpm < minBPM or bpm > maxBPM:
+            if bpm < minBPM:
+                bpm = bpm*2
+            elif bpm > maxBPM:
+                bpm = bpm/2
         return bpm
 
 # For visualizing chunks
