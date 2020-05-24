@@ -7,9 +7,9 @@ from scipy.io import wavfile
 and returns onsets depending on what paremeters you set. 
 Low and high pass filters-like included.
 
-It has to be expanded for more options, as well as getting a better undestanding of 
-the threshold for "frequency amplitude" as it is not clear to me what's the best
-way to limit it to fit the audio file automatically
+To do:
+    -add transient offset to correct bpm, only need to calculate position of first transient
+    then substract offset from all positions
 
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft.html
 https://www.w3resource.com/python-exercises/numpy/python-numpy-exercise-31.php
@@ -24,10 +24,16 @@ class Audio():
     def __init__(self, audiofile):
         self.sampfreq = audiofile[0]
         self.data = audiofile[1]/65536 #16 bits
+        try: # 1 channel only
+            if len(self.data[0]) > 1: 
+                self.data = [i[0] for i in self.data]
+        except:
+            pass
         
-    def Get_NoteOnset(self, unit = 1024, chunk_size = 2048, threshold = 50, LPF = 1000, HPF = 20):
+    def Get_NoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, LPF = 500, HPF = 20):
         pitch_sustain, self.notes = -1, []
         pitch_start,note_on = 0,0
+        threshold = Get_Threshold(self.data, chunk_size, threshold_ratio)
         for i in range(int(len(self.data)/unit)):
             start = unit*(i)
             end = unit*(i) + chunk_size
@@ -63,7 +69,7 @@ class Audio():
             elif bpm > maxBPM:
                 bpm = bpm/2
         return bpm
-
+    
 # For visualizing chunks
 def Plot(x, y, l, r):    
     fig1,ax1 = plt.subplots(subplot_kw=dict())
@@ -88,9 +94,21 @@ def ReadChunk(chunk, threshold, LPF, HPF, sampfreq):
         frequency = -1
     return frequency
 
+def Get_Threshold(data, chunk_size, ratio):
+        low, high = [],[]
+        for i in range(int((len(data)/chunk_size))-1):
+            start = chunk_size*(i)
+            end = chunk_size*(i) + chunk_size
+            chunk = data[start:end]
+            
+            FFT = abs(scipy.fft.fft(chunk))
+
+            low.append(np.amin(abs(FFT)))
+            high.append(np.amax(abs(FFT)))
+
+        return (max(high) - min(low)) * ratio
+
 def most_frequent(List): 
     return max(set(List), key = List.count) 
 def avg(List):
     return sum(List)/len(List)
-
-
