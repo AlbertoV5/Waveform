@@ -10,12 +10,14 @@ LPF is 200
 import onset
 from scipy.io import wavfile
 
-audio = onset.Audio(wavfile.read("takeuchi.wav"))
+audio = onset.Audio(wavfile.read("sine.wav"))
 
-audio.Get_NoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, LPF = 500, HPF = 20)
+audio.Get_NoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = 0.6, LPF = 500, HPF = 20)
 
 audio.Plot_NoteOnset()
 
 print("BPM is: " + str(audio.Get_BPM()))
 
+#spec = audio.Get_NotesFrequencies(0.25, 512)
 
+#audio.Plot_NotesSpectrum(spec)

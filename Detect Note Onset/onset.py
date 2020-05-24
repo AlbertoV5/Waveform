@@ -70,8 +70,33 @@ class Audio():
                 bpm = bpm/2
         return bpm
     
+    def Get_NotesFrequencies(self, gridSize, chunk_size):
+        bpm = Audio.Get_BPM(self)
+        grid_chunk_size = (60/bpm)*self.sampfreq*gridSize
+        spectrum = []
+
+        for i in range(len(self.notes)):
+            start = self.notes[i][1] #gets Note Onset
+            end = int(self.notes[i][1] + chunk_size)
+            note_chunk = self.data[start:end]
+            
+            FFT = abs(scipy.fft.fft(note_chunk))
+            freqs = fftpk.fftfreq(len(FFT), (1.0/self.sampfreq))
+            spectrum.append([freqs,FFT])
+            
+        for i in spectrum:
+            index = np.where(i[1] > np.amax(i[1])*0.33)
+            i.append(abs(i[0][index]))
+            
+        return spectrum
+    
+    def Plot_NotesSpectrum(self, spectrum):
+        for i in spectrum:
+            PlotFreqs(i[0],i[1], 0, 1000)
+    
+    
 # For visualizing chunks
-def Plot(x, y, l, r):    
+def PlotFreqs(x, y, l, r):    
     fig1,ax1 = plt.subplots(subplot_kw=dict())
     ax1.plot(x[range(len(y)//2)],y[range(len(y)//2)])
     ax1.set_xlim(left = l, right = r)
@@ -89,7 +114,7 @@ def ReadChunk(chunk, threshold, LPF, HPF, sampfreq):
     if np.amax(filtered) > threshold:
         index = np.where(filtered == np.amax(filtered))
         frequency = abs(high_pass_filter[index])
-        #Plot(freqs, FFT)
+        #PlotFreqs(freqs, FFT, 0, 1000)
     else:
         frequency = -1
     return frequency
