@@ -19,4 +19,3 @@ audio.Plot_NoteOnset()
 print("BPM is: " + str(audio.Get_BPM()))
 
 
-
