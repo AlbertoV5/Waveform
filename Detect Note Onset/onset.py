@@ -30,7 +30,7 @@ class Audio():
         except:
             pass
         
-    def Get_NoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, LPF = 500, HPF = 20):
+    def Get_NoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500):
         pitch_sustain, self.notes = -1, []
         pitch_start,note_on = 0,0
         threshold = Get_Threshold(self.data, chunk_size, threshold_ratio)
@@ -57,6 +57,7 @@ class Audio():
         plt.xlabel("Time (s)")
         plt.ylabel("Frequency (Hz)")
         plt.scatter(self.x,self.y)
+        plt.show()
     
     def Get_BPM(self, minBPM = 60, maxBPM = 200):
         x = [i[1] for i in self.notes]
@@ -70,7 +71,7 @@ class Audio():
                 bpm = bpm/2
         return bpm
     
-    def Get_NotesFrequencies(self, gridSize, chunk_size):
+    def Get_NotesFrequencies(self, gridSize, chunk_size, HPF, LPF):
         bpm = Audio.Get_BPM(self)
         grid_chunk_size = (60/bpm)*self.sampfreq*gridSize
         spectrum = []
@@ -82,11 +83,13 @@ class Audio():
             
             FFT = abs(scipy.fft.fft(note_chunk))
             freqs = fftpk.fftfreq(len(FFT), (1.0/self.sampfreq))
-            spectrum.append([freqs,FFT])
             
-        for i in spectrum:
-            index = np.where(i[1] > np.amax(i[1])*0.33)
-            i.append(abs(i[0][index]))
+            low_pass_filter = freqs[abs(freqs) < LPF]
+            high_pass_filter = low_pass_filter[abs(low_pass_filter) > HPF]
+            
+            filtered = FFT[:len(high_pass_filter)]
+            
+            spectrum.append([high_pass_filter,filtered])
             
         return spectrum
     
@@ -94,6 +97,13 @@ class Audio():
         for i in spectrum:
             PlotFreqs(i[0],i[1], 0, 1000)
     
+    
+def GetTopFrequencies(spectrum, ratio):
+    top = []
+    for i in spectrum: #Get top frequencies
+        index = np.where(i[1] > np.amax(i[1])*ratio)
+        top.append(abs(i[0][index])) 
+    return top
     
 # For visualizing chunks
 def PlotFreqs(x, y, l, r):    
