@@ -6,10 +6,12 @@ from scipy.io import wavfile
 
 and returns onsets depending on what paremeters you set. 
 Low and high pass filters-like included.
+Included Transient Points.
 
 To do:
-    -add transient offset to correct bpm, only need to calculate position of first transient
-    then substract offset from all positions
+    -Use right channel for control. 
+    -Use bpm against samples or note onset for accuracy percentage
+    -Compare different methods against each other to find differences and trends
 
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft.html
 https://www.w3resource.com/python-exercises/numpy/python-numpy-exercise-31.php
@@ -27,10 +29,12 @@ class Audio():
         try: # 1 channel only
             if len(self.data[0]) > 1: 
                 self.data = [i[0] for i in self.data]
+                print("2 channels detected. Using left side.")
         except:
             pass
+        print("Audio file was read.")
         
-    def Get_NoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500):
+    def GetNoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500):
         pitch_sustain, self.notes = -1, []
         pitch_start,note_on = 0,0
         threshold = Get_Threshold(self.data, chunk_size, threshold_ratio)
@@ -49,20 +53,52 @@ class Audio():
                     pitch_sustain = pitch
             except:
                 print("There was an error somewhere btw")
-    
-    def Plot_NoteOnset(self):
-        self.y = [i[0] for i in self.notes]
-        self.x = [i[1]/self.sampfreq for i in self.notes]
-        self.l = [i[2]-i[1] for i in self.notes] 
-        plt.xlabel("Time (s)")
-        plt.ylabel("Frequency (Hz)")
-        plt.scatter(self.x,self.y)
-        plt.show()
-    
-    def Get_BPM(self, minBPM = 60, maxBPM = 200):
+                
+    def GetTransientPoints(self, x):
+        self.tp = []
+        for i in self.notes:
+            start = i[1] - x
+            end = i[2] + x
+            noteSamples = self.data[start:end]
+            
+            top = np.amax(noteSamples)
+            bot = np.amin(noteSamples)
+            if top > abs(bot):
+                point = top
+            else:
+                point = bot
+            transientPoint = int(max(np.where(noteSamples == point))[0]) + start
+            self.tp.append(transientPoint)
+        
+    def GetBPM(self, minBPM = 60, maxBPM = 200, kind = "mode"):
         x = [i[1] for i in self.notes]
         d = [x[i+1]-x[i] for i in range(len(x)) if i < len(x)-1]
-        beat_s = most_frequent(d)/self.sampfreq
+        if kind == "mean":
+            beat_s = mean(d)/self.sampfreq
+        elif kind == "mode":
+            beat_s = mode(d)/self.sampfreq
+        elif kind == "median":
+            beat_s = median(d)/self.sampfreq
+        else:
+            print("Error")
+        bpm = 60/beat_s
+        while bpm < minBPM or bpm > maxBPM:
+            if bpm < minBPM:
+                bpm = bpm*2
+            elif bpm > maxBPM:
+                bpm = bpm/2
+        return bpm
+        
+    def GetBPM_TP(self, minBPM, maxBPM, kind):
+        d = [self.tp[i+1]-self.tp[i] for i in range(len(self.tp)) if i < len(self.tp)-1]
+        if kind == "mean":
+            beat_s = mean(d)/self.sampfreq
+        elif kind == "mode":
+            beat_s = mode(d)/self.sampfreq
+        elif kind == "median":
+            beat_s = median(d)/self.sampfreq
+        else:
+            print("Error.")
         bpm = 60/beat_s
         while bpm < minBPM or bpm > maxBPM:
             if bpm < minBPM:
@@ -71,8 +107,8 @@ class Audio():
                 bpm = bpm/2
         return bpm
     
-    def Get_NotesFrequencies(self, gridSize, chunk_size, HPF, LPF):
-        bpm = Audio.Get_BPM(self)
+    def GetNotesFrequencies(self, gridSize, chunk_size, HPF, LPF):
+        bpm = Audio.GetBPM(self)
         grid_chunk_size = (60/bpm)*self.sampfreq*gridSize
         spectrum = []
 
@@ -93,11 +129,20 @@ class Audio():
             
         return spectrum
     
-    def Plot_NotesSpectrum(self, spectrum):
+    def PlotNoteOnset(self):
+        self.y = [i[0] for i in self.notes]
+        self.x = [i[1]/self.sampfreq for i in self.notes]
+        self.l = [i[2]-i[1] for i in self.notes] 
+        plt.xlabel("Time (s)")
+        plt.ylabel("Frequency (Hz)")
+        plt.scatter(self.x,self.y)
+        plt.show()
+    
+    def PlotNotesSpectrum(self, spectrum):
         for i in spectrum:
             PlotFreqs(i[0],i[1], 0, 1000)
-    
-    
+        
+      
 def GetTopFrequencies(spectrum, ratio):
     top = []
     for i in spectrum: #Get top frequencies
@@ -143,7 +188,10 @@ def Get_Threshold(data, chunk_size, ratio):
 
         return (max(high) - min(low)) * ratio
 
-def most_frequent(List): 
+def mode(List):  #most frequent
     return max(set(List), key = List.count) 
-def avg(List):
+def mean(List): #average value
     return sum(List)/len(List)
+def median(List): #middle of the list
+    return sorted(List)[int(len(List)/2)]
+

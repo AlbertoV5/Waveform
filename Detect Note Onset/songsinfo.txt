@@ -1,0 +1,6 @@
+3force.wav, 160 bpm, song: Insect by 3FORCE
+acemarino.wav, 87 bpm, song: Spaces by Marino
+lektrique.wav, 128 bpm, song: Nightfall by Lektrique
+purdie.wav, 100 bpm, song: just a drum beat
+sine.wav, 70 bpm, song: just a sine wave test
+takeuchi.wav, around 103 bpm, song: plastic love by Mariya Takeuchi
