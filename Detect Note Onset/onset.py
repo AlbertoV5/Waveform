@@ -21,28 +21,57 @@ import numpy as np
 import scipy
 import scipy.fftpack as fftpk
 import matplotlib.pyplot as plt
+import math
 
-class Audio():
-    def __init__(self, audiofile):
+class Song():
+    def __init__(self, audiofile, start = 0, end = 0):
         self.sampfreq = audiofile[0]
-        self.data = audiofile[1]/65536 #16 bits
+        self.data = audiofile[1]/32767 #16 bits
+        self.peakAlphaIndex = 0
         try: # 1 channel only
             if len(self.data[0]) > 1: 
                 self.data = [i[0] for i in self.data]
                 print("2 channels detected. Using left side.")
         except:
             pass
+        
+        start = start * self.sampfreq
+        end = end * self.sampfreq
+        if end != 0:
+            self.data = self.data[start:end]
+        else:
+            pass
+        
         print("Audio file was read.")
         
+    def GetRMS(self):
+        return 20*np.log10((np.mean(np.absolute(self.data))))
+
+    def FindAlphaPeak(self, start = 0, threshold = 0.8):
+        index = 0
+        self.peakAlpha = 0
+        self.peakAlphaIndex = 0
+        for i in self.data:
+            if abs(i) > threshold:
+                self.peakAlpha = i
+                self.peakAlphaIndex = index
+                break
+            index +=1
+                            
     def GetNoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500):
         pitch_sustain, self.notes = -1, []
         pitch_start,note_on = 0,0
-        threshold = Get_Threshold(self.data, chunk_size, threshold_ratio)
-        for i in range(int(len(self.data)/unit)):
-            start = unit*(i)
-            end = unit*(i) + chunk_size
-            pitch = ReadChunk(self.data[start:end], threshold, LPF, HPF, self.sampfreq)
+        threshold = Get_Threshold(self.data, chunk_size, threshold_ratio, HPF, LPF, self.sampfreq)
+        
+        #song.length Prevents going over the limit and crashing
+        self.length = len(self.data) - self.peakAlphaIndex
+        
+        for i in range(self.length//unit):
+            start = unit*(i) + self.peakAlphaIndex
+            end = unit*(i) + chunk_size + self.peakAlphaIndex
+
             try:
+                pitch = ReadChunk(self.data[start:end], threshold, LPF, HPF, self.sampfreq)
                 if pitch != -1 and pitch != pitch_sustain: #Note change
                     note_on = start
                     pitch_sustain = pitch
@@ -54,21 +83,34 @@ class Audio():
             except:
                 print("There was an error somewhere btw")
                 
-    def GetTransientPoints(self, x):
-        self.tp = []
-        for i in self.notes:
-            start = i[1] - x
-            end = i[2] + x
-            noteSamples = self.data[start:end]
-            
-            top = np.amax(noteSamples)
-            bot = np.amin(noteSamples)
+    def GetPeaks(self, x):
+        self.pks = []
+        self.pksValue = []
+        for i in self.notes:   
+            #Limits of data
+            try:
+                start = i[1] - x
+                end = i[2] + x
+                noteSamples = self.data[start:end]
+                top = np.amax(noteSamples)
+                bot = np.amin(noteSamples)
+            except:
+                start = i[1]
+                end = i[2]
+                noteSamples = self.data[start:end]
+                top = np.amax(noteSamples)
+                bot = np.amin(noteSamples)
+                
+            # Circumvent indexing an absolute value
             if top > abs(bot):
                 point = top
             else:
                 point = bot
+            
             transientPoint = int(max(np.where(noteSamples == point))[0]) + start
-            self.tp.append(transientPoint)
+            self.pks.append(transientPoint)
+            self.pksValue.append(point)
+    
         
     def GetBPM(self, minBPM = 60, maxBPM = 200, kind = "mode"):
         x = [i[1] for i in self.notes]
@@ -89,8 +131,8 @@ class Audio():
                 bpm = bpm/2
         return bpm
         
-    def GetBPM_TP(self, minBPM, maxBPM, kind):
-        d = [self.tp[i+1]-self.tp[i] for i in range(len(self.tp)) if i < len(self.tp)-1]
+    def GetBPM_PKS(self, minBPM, maxBPM, kind):
+        d = [self.pks[i+1]-self.pks[i] for i in range(len(self.pks)) if i < len(self.pks)-1]
         if kind == "mean":
             beat_s = mean(d)/self.sampfreq
         elif kind == "mode":
@@ -105,29 +147,10 @@ class Audio():
                 bpm = bpm*2
             elif bpm > maxBPM:
                 bpm = bpm/2
-        return bpm
-    
-    def GetNotesFrequencies(self, gridSize, chunk_size, HPF, LPF):
-        bpm = Audio.GetBPM(self)
-        grid_chunk_size = (60/bpm)*self.sampfreq*gridSize
-        spectrum = []
+        return bpm 
 
-        for i in range(len(self.notes)):
-            start = self.notes[i][1] #gets Note Onset
-            end = int(self.notes[i][1] + chunk_size)
-            note_chunk = self.data[start:end]
-            
-            FFT = abs(scipy.fft.fft(note_chunk))
-            freqs = fftpk.fftfreq(len(FFT), (1.0/self.sampfreq))
-            
-            low_pass_filter = freqs[abs(freqs) < LPF]
-            high_pass_filter = low_pass_filter[abs(low_pass_filter) > HPF]
-            
-            filtered = FFT[:len(high_pass_filter)]
-            
-            spectrum.append([high_pass_filter,filtered])
-            
-        return spectrum
+    def OutNote(self, start, end):
+        return np.asarray(self.data[start:end]*32767, dtype=np.int16)
     
     def PlotNoteOnset(self):
         self.y = [i[0] for i in self.notes]
@@ -137,12 +160,62 @@ class Audio():
         plt.ylabel("Frequency (Hz)")
         plt.scatter(self.x,self.y)
         plt.show()
-    
-    def PlotNotesSpectrum(self, spectrum):
-        for i in spectrum:
-            PlotFreqs(i[0],i[1], 0, 1000)
         
-      
+    def PlotPeaks(self):
+        x = self.pks
+        y = [abs(i) for i in self.pksValue]
+        y = [1 for i in self.pksValue]
+        plt.xlabel("Sample Position")
+        plt.ylabel("Amplitude")
+        plt.scatter(x,y)
+        plt.show()
+        
+  
+class Grid():
+    def __init__(self,data):
+        self.all = data
+    
+    def SetBPM(self, bpm):
+        self.bpm = bpm
+    
+def GetBPM(notes, sampfreq, minBPM = 60, maxBPM = 200, kind = "mode"):
+    x = [i[1] for i in notes]
+    d = [x[i+1]-x[i] for i in range(len(x)) if i < len(x)-1]
+    if kind == "mean":
+        beat_s = mean(d)/sampfreq
+    elif kind == "mode":
+        beat_s = mode(d)/sampfreq
+    elif kind == "median":
+        beat_s = median(d)/sampfreq
+    else:
+        print("Error")
+    bpm = 60/beat_s
+    while bpm < minBPM or bpm > maxBPM:
+        if bpm < minBPM:
+            bpm = bpm*2
+        elif bpm > maxBPM:
+            bpm = bpm/2
+    return bpm
+
+def GetBPM_PKS(pks, sampfreq, minBPM, maxBPM, kind):
+    d = [pks[i+1]-pks[i] for i in range(len(pks)) if i < len(pks)-1]
+    if kind == "mean":
+        beat_s = mean(d)/sampfreq
+    elif kind == "mode":
+        beat_s = mode(d)/sampfreq
+    elif kind == "median":
+        beat_s = median(d)/sampfreq
+    else:
+        print("Error.")
+    bpm = 60/beat_s
+    while bpm < minBPM or bpm > maxBPM:
+        if bpm < minBPM:
+            bpm = bpm*2
+        elif bpm > maxBPM:
+            bpm = bpm/2
+    return bpm 
+
+    
 def GetTopFrequencies(spectrum, ratio):
     top = []
     for i in spectrum: #Get top frequencies
@@ -150,31 +223,140 @@ def GetTopFrequencies(spectrum, ratio):
         top.append(abs(i[0][index])) 
     return top
     
-# For visualizing chunks
-def PlotFreqs(x, y, l, r):    
-    fig1,ax1 = plt.subplots(subplot_kw=dict())
-    ax1.plot(x[range(len(y)//2)],y[range(len(y)//2)])
-    ax1.set_xlim(left = l, right = r)
+def PlotNote(note, sampfreq, LPF, HPF):    
+    x, y = FFT(note,sampfreq, LPF, HPF) 
+    plt.yscale("log")
+    plt.xlabel("Frequency")
+    plt.ylabel("Amplitude (log)")
+    plt.plot(x,y)
+    plt.show()
+
+def PlotNoteSpecial(note, sampfreq, LPF, HPF):    
+    x, y = FFT(note,sampfreq, LPF, HPF) 
+    
+    scale = [i*100 for i in range(HPF//100)]
+    
+    maxValue = 150
+    x2,y2 = [],[]
+    for i in range(len(scale)):
+        left = scale[i]
+        try:
+            right = scale[i+1]
+        except:
+            right = scale[i] + 100
+        y_avg = []
+        for j in range(len(x)):
+            if x[j] >= left and x[j] < right:
+                y_avg.append(y[j]/maxValue)
+            
+        yValue = mean(y_avg)
+        x2.append(i)
+        y2.append(yValue)
+        
+    plt.ylim(0, 1)
+    plt.plot(x2,y2)
+    plt.show()
+    return x2,y2
+
+def GetNotePlotSpecial(note, sampfreq, LPF, HPF):
+    x, y = FFT(note,sampfreq, LPF, HPF) 
+    
+    scale = [i*100 for i in range(HPF//100)]
+    
+    maxValue = 150
+    x2,y2 = [],[]
+    for i in range(len(scale)):
+        left = scale[i]
+        try:
+            right = scale[i+1]
+        except:
+            right = scale[i] + 100
+        y_avg = []
+        for j in range(len(x)):
+            if x[j] >= left and x[j] < right:
+                y_avg.append(y[j]/maxValue)
+            
+        yValue = mean(y_avg)
+        x2.append(i)
+        y2.append(yValue)
+        
+    return x2,y2
 
 def ReadChunk(chunk, threshold, LPF, HPF, sampfreq):
     FFT = abs(scipy.fft.fft(chunk))
     freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
     
-    #The term is not accurate to synthesis but its a similar idea
-    low_pass_filter = freqs[abs(freqs) < LPF]
-    high_pass_filter = low_pass_filter[abs(low_pass_filter) > HPF]
+    freqs = freqs[range(len(FFT)//2)]
     
-    filtered = FFT[:len(high_pass_filter)]
+    freqsHPF = freqs[freqs > HPF]
+    freqsLPF = freqs[freqs < LPF]
+    
+    indexHPF = int(max(np.where(freqs == freqsHPF[0])))
+    indexLPF = int(max(np.where(freqs == freqsLPF[len(freqsLPF)-1])))
+        
+    FFT = FFT[range(len(FFT)//2)]
+    
+    FFTF = FFT[indexHPF:indexLPF]
+    freqsF = freqs[indexHPF:indexLPF]
 
-    if np.amax(filtered) > threshold:
-        index = np.where(filtered == np.amax(filtered))
-        frequency = abs(high_pass_filter[index])
+    if np.amax(FFTF) > threshold:
+        index = np.where(FFTF == np.amax(FFTF))
+        frequency = abs(freqsF[index])
         #PlotFreqs(freqs, FFT, 0, 1000)
     else:
         frequency = -1
     return frequency
 
-def Get_Threshold(data, chunk_size, ratio):
+def FFT(chunk, sampfreq, HPF, LPF):
+        
+    FFT = abs(scipy.fft.fft(chunk))
+    freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
+    
+    freqs = freqs[range(len(FFT)//2)]
+    
+    freqsHPF = freqs[freqs > HPF]
+    freqsLPF = freqs[freqs < LPF]
+    
+    indexHPF = int(max(np.where(freqs == freqsHPF[0])))
+    indexLPF = int(max(np.where(freqs == freqsLPF[len(freqsLPF)-1])))
+        
+    FFT = FFT[range(len(FFT)//2)]
+    
+    FFTF = FFT[indexHPF:indexLPF]
+    freqsF = freqs[indexHPF:indexLPF]
+    
+    return freqsF, FFTF 
+
+def GetPartOnset(part,sampfreq = 44100, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500):
+    pitch_sustain, notes = -1, []
+    pitch_start,note_on = 0,0
+    threshold = Get_Threshold(part, chunk_size, threshold_ratio, HPF, LPF, sampfreq)
+    
+    #song.length Prevents going over the limit and crashing
+    length = len(part)
+    
+    for i in range(length//unit):
+        start = unit*(i) 
+        end = unit*(i) + chunk_size
+        pitch = ReadChunk(part[start:end], threshold, LPF, HPF, sampfreq)
+
+        try:
+            if pitch != -1 and pitch != pitch_sustain: #Note change
+                note_on = start
+                pitch_sustain = pitch
+                pitch_start = pitch
+            elif pitch == -1 and pitch_sustain>-1:
+                note_release = start
+                notes.append([pitch_start, note_on, note_release])
+                pitch_sustain = pitch
+        except:
+            print("There was an error somewhere btw")
+    
+    return notes
+                
+def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq):
+        #Find the highest power in the frequency range in the whole song
+        #Use it as threshold multiplied by the ratio received
         low, high = [],[]
         for i in range(int((len(data)/chunk_size))-1):
             start = chunk_size*(i)
@@ -182,12 +364,63 @@ def Get_Threshold(data, chunk_size, ratio):
             chunk = data[start:end]
             
             FFT = abs(scipy.fft.fft(chunk))
+            freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
 
-            low.append(np.amin(abs(FFT)))
-            high.append(np.amax(abs(FFT)))
+            freqsHPF = freqs[freqs > HPF]
+            freqsLPF = freqs[freqs < LPF]
+            
+            indexHPF = int(max(np.where(freqs == freqsHPF[0])))
+            indexLPF = int(max(np.where(freqs == freqsLPF[len(freqsLPF)-1])))
+            
+            FFT = FFT[range(len(FFT)//2)]
+            FFTF = FFT[indexHPF:indexLPF]
+
+            low.append(np.amin(abs(FFTF)))
+            high.append(np.amax(abs(FFTF)))
 
         return (max(high) - min(low)) * ratio
 
+def GetPeaks(part, notes, x):
+        pks = []
+        pksValue = []
+        for i in notes:   
+            #Limits of data
+            try:
+                start = i[1] - x
+                end = i[2] + x
+                noteSamples = part[start:end]
+                top = np.amax(noteSamples)
+                bot = np.amin(noteSamples)
+            except:
+                start = i[1]
+                end = i[2]
+                noteSamples = part[start:end]
+                top = np.amax(noteSamples)
+                bot = np.amin(noteSamples)
+                
+            # Circumvent indexing an absolute value
+            if top > abs(bot):
+                point = top
+            else:
+                point = bot
+            
+            transientPoint = int(max(np.where(noteSamples == point))[0]) + start
+            pks.append(transientPoint)
+            pksValue.append(point)   
+        return pks, pksValue
+    
+def GetRMS(part):
+    rms = 20*np.log10((np.mean(np.absolute(part))))
+    print("RMS is: " + str(rms) + " dB")
+    return rms
+
+def CalculateThreshold_RMS(data):
+    rms = GetRMS(data)
+    floor = -48
+    tr = 1 - (rms/floor)
+    print("Treshold is: " + str(tr))
+    return tr
+    
 def mode(List):  #most frequent
     return max(set(List), key = List.count) 
 def mean(List): #average value
