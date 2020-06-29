@@ -171,7 +171,7 @@ class Song():
             file.write(data)
 
 
-def GetSpectrumPeaks(x, y):
+def GetFrequencyPeaks(x, y):
     peaks_x = []
     peaks_y = []
     for i in range(len(y)):
@@ -181,10 +181,9 @@ def GetSpectrumPeaks(x, y):
                 peaks_y.append(y[i])
     return peaks_x, peaks_y
                     
-    
 def PlotNote(note, sampfreq, LPF, HPF, name):    
     x, y = CalculateFFT_dB(note,sampfreq, LPF, HPF) 
-    x_peaks, y_peaks = GetSpectrumPeaks(x,y)
+    x_peaks, y_peaks = GetFrequencyPeaks(x,y)
     plt.figure(figsize=(20,10))
     #plt.xticks(x_peaks)
     plt.xlabel("Frequency (Hz)")
@@ -213,16 +212,7 @@ def PlotPeaks2(x, y, xticks, ylim, name):
     plt.xticks(xticks)
     plt.savefig(name)
     plt.show()
-    
-def PlotTopFreqs(x,y,xticks,xlim,name):
-    plt.figure(figsize=(20,10))
-    plt.grid(True)
-    plt.xticks(xticks)
-    plt.xlim((0,xlim))
-    plt.plot(x,y)
-    plt.scatter(x,y)
-    plt.savefig(name)
-    plt.show()
+
 
 def ReadChunk(chunk, threshold, LPF, HPF, sampfreq, base):
     FFT = abs(scipy.fft.fft(chunk))
@@ -352,20 +342,10 @@ def AmplitudeSum(freqBands):
         y.append(sum(j))
     return y
 
-def SaveSimpleSpectrogram(limits, simpleSpectrogram):
-    csv = ""
-    for i in limits:
-        csv = csv + str(i) + ","
+
     
-    for i in simpleSpectrogram:
-        csv = csv + "\n"
-        for j in i:
-            csv = csv + str(j) + ","
-    
-    with open("simpleSpectrogram.csv", "w+") as file:
-        file.write(csv)
-    
-def GetTopFrequencies(x,y, num = 5):
+def GetTopFrequencies(a,b, num = 5):
+    x, y = list(a), list(b)
     freq,amp = [],[]
     for i in range(num):
         m = (max(y))
@@ -377,7 +357,7 @@ def GetTopFrequencies(x,y, num = 5):
         y.pop(index)
         x.pop(index)
         
-    return freq, amp
+    return [freq, amp]
 
 def mode(List):  #most frequent
     return max(set(List), key = List.count) 

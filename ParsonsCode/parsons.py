@@ -56,5 +56,13 @@ def GetPCode_Silence(x,y):
             code.append(value)
     return code
 
+def SaveCSV(x,y,name):
+    csv = ""
+    for i in range(len(y)):
+        csv = csv + str(x[i]) + "," + str(y[i]) + "\n"
+    
+    with open(name, "w+") as file:
+        file.write(csv)
+        
 def Cube():
     pass
