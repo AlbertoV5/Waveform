@@ -28,6 +28,9 @@ class Song():
         self.sampfreq = audiofile[0]
         self.data = audiofile[1]/32767 #16 bits
         self.peakAlphaIndex = 0
+        self.length = len(self.data) - self.peakAlphaIndex
+        self.length_seconds = self.length / 44100
+
         try: # 1 channel only
             if len(self.data[0]) > 1: 
                 self.data = [i[0] for i in self.data]
@@ -58,6 +61,9 @@ class Song():
                 break
             index +=1
         print("Alpha peak is at: " + str(self.peakAlphaIndex/self.sampfreq) + " seconds.")
+        self.length = len(self.data) - self.peakAlphaIndex
+        self.length_seconds = self.length / 44100
+
         
     def GetNoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500, base = 10):
         sus, on, self.notes = -1, -1, []
@@ -67,7 +73,6 @@ class Song():
         print("Threshold found for " + str(threshold_ratio) + " ratio is: " + str(threshold))
         
         #song.length Prevents going over the limit and crashing
-        self.length = len(self.data) - self.peakAlphaIndex
         
         for i in range(self.length//unit):
             start = unit*(i) + self.peakAlphaIndex
@@ -180,6 +185,7 @@ def GetFrequencyPeaks(x, y):
                 peaks_x.append(x[i])
                 peaks_y.append(y[i])
     return peaks_x, peaks_y
+
                     
 def PlotNote(note, sampfreq, LPF, HPF, name):    
     x, y = CalculateFFT_dB(note,sampfreq, LPF, HPF) 
@@ -341,7 +347,6 @@ def AmplitudeSum(freqBands):
     for j in freqBands:
         y.append(sum(j))
     return y
-
 
     
 def GetTopFrequencies(a,b, num = 5):

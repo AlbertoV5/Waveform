@@ -7,6 +7,7 @@ SIMPLEGRAM: Simple Spectrogram
 import onset
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def Easygram(limits,song,bpm,barIn,barEnd,measure,unitSize,save=False):
     multiband, energy, topFrequencies = [], [], []
@@ -35,8 +36,19 @@ def Easygram(limits,song,bpm,barIn,barEnd,measure,unitSize,save=False):
         
     return multiband,energy,topFrequencies
 
+def GetNotesPeaks3D(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
+    multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
+    threshold = max(energy)*tr
+    x, y, z = [],[],[]
+    for i in range(len(topFrequencies)):
+        if energy[i] > threshold:
+            for j in range(len(topFrequencies[i][0])): #[freq, energy]
+                x.append(i)
+                y.append(topFrequencies[i][1][j])
+                z.append(topFrequencies[i][0][j])
+    return x, y , z
+
 def GetNotesPeakFrequency(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
-    
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
     threshold = max(energy)*tr
 
@@ -50,7 +62,6 @@ def GetNotesPeakFrequency(limits, song, bpm, barIn, barEnd, measure, unitSize, t
     return x_peakFreq, y_peakFreq
 
 def GetNotesPeakEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
-    
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
     threshold = max(energy)*tr
 
@@ -64,7 +75,6 @@ def GetNotesPeakEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, 
     return x_peakEnergy, y_peakEnergy
 
 def GetNotesTotalEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
-   
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
     threshold = max(energy)*tr
     
@@ -111,7 +121,7 @@ def Plot(x, y, xticks, ylim, ylabel, xlabel, name):
     plt.xlabel(xlabel)
     plt.savefig(name)
     plt.show()
-
+    
     
 def SaveSimpleSpectrogram(limits, simpleSpectrogram):
     csv = ""
