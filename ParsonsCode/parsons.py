@@ -15,7 +15,7 @@ def LoudestBand(x,y):
         highest.append(freq)
     return highest
     
-def GetPCode(sequence):
+def GetPCode_Old(sequence):
     code = ["*"]
     for i in range(len(sequence)-1):
         if sequence[i+1] > sequence[i]:
@@ -41,7 +41,7 @@ def GetPCode_Num(sequence):
             code.append(value)
     return code
 
-def GetPCode_Silence(x,y):
+def GetPCode(x,y):
     value = 0
     code = [value]
     for i in range(len(y)-1):
