@@ -20,11 +20,12 @@ https://www.w3resource.com/python-exercises/numpy/python-numpy-exercise-31.php
 import numpy as np
 import scipy
 import scipy.fftpack as fftpk
+from scipy.io import wavfile
 import matplotlib.pyplot as plt
-import math
 
 class Song():
-    def __init__(self, audiofile, start = 0, end = 0):
+    def __init__(self, songName, start = 0, end = 0):
+        audiofile = wavfile.read(songName)
         self.sampfreq = audiofile[0]
         self.data = audiofile[1]/32767 #16 bits
         self.peakAlphaIndex = 0
@@ -34,7 +35,6 @@ class Song():
         try: # 1 channel only
             if len(self.data[0]) > 1: 
                 self.data = [i[0] for i in self.data]
-                print("2 channels detected. Using left side.")
         except:
             pass
         
@@ -45,10 +45,11 @@ class Song():
         else:
             pass
         
-        print("Audio file was read.")
+        print("\nAudio file was read.")
         
     def GetRMS(self):
-        return 20*np.log10((np.mean(np.absolute(self.data))))
+        rms = 20*np.log10((np.mean(np.absolute(self.data))))
+        return int(rms*100)/100
 
     def FindAlphaPeak(self, start = 0, threshold = 0.8):
         index = 0
@@ -60,17 +61,18 @@ class Song():
                 self.peakAlphaIndex = index
                 break
             index +=1
-        print("Alpha peak is at: " + str(self.peakAlphaIndex/self.sampfreq) + " seconds.")
+        peakAlphaIndex_sec = int((self.peakAlphaIndex/self.sampfreq)*1000)/1000
+        print("Alpha peak is at: " + str(peakAlphaIndex_sec) + " seconds.")
         self.length = len(self.data) - self.peakAlphaIndex
         self.length_seconds = self.length / 44100
-
+        return peakAlphaIndex_sec
         
     def GetNoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500, base = 10):
         sus, on, self.notes = -1, -1, []
         note_on = 0
         threshold = Get_Threshold(self.data, chunk_size, threshold_ratio, HPF, LPF, self.sampfreq, base)
             
-        print("Threshold found for " + str(threshold_ratio) + " ratio is: " + str(threshold))
+        print("Ratio: " + str(threshold_ratio) + " = Threshold: " + str(threshold))
         
         #song.length Prevents going over the limit and crashing
         
@@ -115,7 +117,7 @@ class Song():
             self.pks.append(transientPoint)
             self.pksValue.append(point)
         
-    def GetBPM(self, minBPM = 60, maxBPM = 200, kind = "mode"):
+    def GetBPM(self, minBPM = 80, maxBPM = 210, kind = "mode"):
         x = [i[0] for i in self.notes]
         d = [x[i+1]-x[i] for i in range(len(x)) if i < len(x)-1]
         if kind == "mean":
@@ -134,7 +136,7 @@ class Song():
                 bpm = bpm/2
         return bpm
         
-    def GetBPM_PKS(self, minBPM = 60, maxBPM = 200, kind = "mode"):
+    def GetBPM_PKS(self, minBPM = 80, maxBPM = 210, kind = "mode"):
         d = [self.pks[i+1]-self.pks[i] for i in range(len(self.pks)) if i < len(self.pks)-1]
         if kind == "mean":
             beat_s = mean(d)/self.sampfreq
@@ -325,7 +327,14 @@ def CalculateThreshold_RMS(data):
     rms = GetRMS(data)
     floor = -96
     tr = 1 - (rms/floor)
-    print("Suggested treshold is: " + str(tr))
+    print("Suggested ratio is: " + str(tr))
+    return tr
+
+def CalculateThreshold_RMS2(data):
+    rms = GetRMS(data)
+    floor = -48
+    tr = 0.5 + (rms/floor)
+    print("Suggested ratio is: " + str(tr))
     return tr
 
 def FitFrequencyInBands(freq, bandL, bandR, i):

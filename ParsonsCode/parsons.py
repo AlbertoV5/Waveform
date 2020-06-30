@@ -63,7 +63,18 @@ def SaveCSV(x,y,name):
     
     with open(name, "w+") as file:
         file.write(csv)
+
+def SaveCSV3D(x, e, f, path, name):
+    csv = "Position,Energy,Frequency"
+    name = name.split(".")[0]
         
+    for i in range(len(x)):
+        csv = csv + "\n" + str(x[i]) + "," + str(e[i]) + "," + str(f[i])
+        
+    with open(path + name + ".csv", "w+") as file:
+        file.write(csv)
+    
+    print(".csv saved to path.")
         
 def Cube():
     pass

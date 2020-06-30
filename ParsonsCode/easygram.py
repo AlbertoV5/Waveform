@@ -38,7 +38,7 @@ def Easygram(limits,song,bpm,barIn,barEnd,measure,unitSize,save=False):
 
 def GetNotesPeaks3D(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
-    threshold = max(energy)*tr
+    threshold = (max(energy)-min(energy))*tr + min(energy)
     x, y, z = [],[],[]
     for i in range(len(topFrequencies)):
         if energy[i] > threshold:
@@ -50,7 +50,7 @@ def GetNotesPeaks3D(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, sav
 
 def GetNotesPeakFrequency(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
-    threshold = max(energy)*tr
+    threshold = (max(energy)-min(energy))*tr + min(energy)
 
     x_peakFreq, y_peakFreq = [],[]
     for i in range(len(topFrequencies)):
@@ -63,7 +63,7 @@ def GetNotesPeakFrequency(limits, song, bpm, barIn, barEnd, measure, unitSize, t
 
 def GetNotesPeakEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
-    threshold = max(energy)*tr
+    threshold = (max(energy)-min(energy))*tr + min(energy)
 
     x_peakEnergy, y_peakEnergy = [],[]
     for i in range(len(topFrequencies)):
@@ -76,7 +76,7 @@ def GetNotesPeakEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, 
 
 def GetNotesTotalEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, tr, save):
     multiband, energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, save)
-    threshold = max(energy)*tr
+    threshold = (max(energy)-min(energy))*tr + min(energy)
     
     x_totalEnergy, y_totalEnergy = [],[]
     for i in range(len(energy)):
@@ -122,6 +122,39 @@ def Plot(x, y, xticks, ylim, ylabel, xlabel, name):
     plt.savefig(name)
     plt.show()
     
+def PlotPart(x,y,maxBars,name):
+    plt.figure(figsize=(30,10))
+    plt.grid(True)
+    plt.plot(x, y)
+    plt.scatter(x, y)
+    plt.xticks([i*16 for i in range(maxBars+1)])
+    plt.savefig(name)
+    plt.show()
+    
+def PlotComplete(x,y_e_pc,y_f_pc,bpm,maxBars,freqBands,plotPath,songName, tr, rms, peakAlpha):
+    name = plotPath + songName.split(".")[0] + ".png"
+    title = "Name: " + songName.split(".")[0] + ", BPM: " + str(bpm) + ", FreqBands: " + str(freqBands[0])
+    title = title + " to " + str(freqBands[len(freqBands)-1]) + " Hz, RMS: " + str(rms) + " dB"
+    title = title + ", Threshold: " + str(tr) + ", Starts at: " + str(peakAlpha) + " sec"
+
+    plt.figure(figsize=(50,10))
+    plt.xticks([i*16 for i in range(maxBars+1)])
+    plt.grid(True)
+    
+    plt.plot(x, y_e_pc, color = "r")
+    plt.plot(x, y_f_pc, color = "b")
+    
+    plt.legend(["Energy", "Frequency"], fontsize = 20)
+    plt.scatter(x, y_f_pc, color = "b")
+    plt.scatter(x, y_e_pc, color = "r")
+    
+    plt.title(title, fontsize = 24)
+    plt.ylabel("Parsons Code", fontsize = 20)
+    plt.xlabel("Position (bars)", fontsize = 20)
+    plt.savefig(name)
+    plt.show()    
+    print("Saved plot to path.")
+
     
 def SaveSimpleSpectrogram(limits, simpleSpectrogram):
     csv = ""
