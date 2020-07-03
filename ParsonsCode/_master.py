@@ -60,7 +60,7 @@ def Song(file):
     print("Song duration in bars: " + str(maxBars))
         
     def Melody():
-        noteThreshold = 0.7
+        noteThreshold = 0.6
         unitSize = 0.25
         print("\nObtaining Melody...")
         # Continuous, Peaks, 4 by 4, unit 0.25
