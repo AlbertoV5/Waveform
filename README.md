@@ -7,16 +7,16 @@ Required:
 - Numpy
 - Scipy
 - Matplot
-- Pydub for converting .mp3
+- Pydub for converting .mp3 if you don't want to conver to WAV 16 bits manually
 
 What it does:
-- Read a song and output frequency spectrum of each 16th subdivision.
-- Onset is still WIP, experimenting with FFT and what's the best way to get transients by frequency band, or just get transient and then evaluate frequency, idk
 
-To do:
+- Read a song and output 4 parson code sequences.
+- Save the sequences as plot, .csv and "note onset" .csv for Reaper.
+- Reascript for importing onsets to Reaper not included.
 
-- Onset detection
-- BPM detection
-- Comparing pitch
-- Time Grid / Clock / BPM
-- Add the audio file to the video
+Applications:
+
+- Rhythm Games, automatic map generation.
+- Broad song analysis/comparison.
+- Not a reliable "automatic music transcriber".

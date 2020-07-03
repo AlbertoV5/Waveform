@@ -9,7 +9,6 @@ import onset
 import parsons
 import easygram as ez
 import getBPM_Bass as bpmb
-import mp3
 
 songName = "spectre.mp3"
 plotPath, csvPath = "PCP/plots/", "PCP/csv/"
