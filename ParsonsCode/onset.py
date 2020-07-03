@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 
 class Song():
     def __init__(self, songName, start = 0, end = 0):
+        print("Reading audio file.")
         audiofile = wavfile.read(songName)
         self.sampfreq = audiofile[0]
         self.data = audiofile[1]/32767 #16 bits
@@ -33,11 +34,11 @@ class Song():
         self.length_seconds = self.length / 44100
 
         try: # 1 channel only
-            if len(self.data[0]) > 1: 
-                self.data = [i[0] for i in self.data]
+            if len(self.data[0]) > 1: # checks for list >= 2
+                channels = len(self.data[0])
+                self.data = [(i[0] + i[1]) / channels for i in self.data]
         except:
             pass
-        
         start = start * self.sampfreq
         end = end * self.sampfreq
         if end != 0:
@@ -317,7 +318,6 @@ def SavePeaks(peaks, sampfreq, channels, alphaPeak, name):
     with open(name, "w+") as file:
         file.write(data)
     
-    
 def GetRMS(part):
     rms = 20*np.log10((np.mean(np.absolute(part))))
     print("RMS is: " + str(rms) + " dB")
@@ -358,7 +358,7 @@ def AmplitudeSum(freqBands):
     return y
 
     
-def GetTopFrequencies(a,b, num = 5):
+def GetTopFrequencies(a,b,start,num = 5):
     x, y = list(a), list(b)
     freq,amp = [],[]
     for i in range(num):
@@ -371,7 +371,7 @@ def GetTopFrequencies(a,b, num = 5):
         y.pop(index)
         x.pop(index)
         
-    return [freq, amp]
+    return [freq, amp, start]
 
 def mode(List):  #most frequent
     return max(set(List), key = List.count) 
