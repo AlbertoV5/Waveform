@@ -7,7 +7,7 @@ Required:
 - Numpy
 - Scipy
 - Matplot
-- CV2 (for generating video from matplot graphs)
+- Pydub for converting .mp3
 
 What it does:
 - Read a song and output frequency spectrum of each 16th subdivision.
