@@ -7,11 +7,14 @@ Required:
 - Numpy
 - Scipy
 - Matplot
+Extra:
 - Pydub for converting .mp3 if you don't want to conver to WAV 16 bits manually
+- CV2 if you want to generate the 4x4 video reference.
+
 
 What it does:
 
-- Read a song and output 4 parson code sequences (Melody, Bass, Snare, HiHats) or (300-1.8k Hz, 0-120 Hz, 120-300 Hz, 9k-16k Hz.
+- Read a song and output 4 parson code sequences (Melody, Bass, Snare, HiHats) or (300-1.8k Hz, 0-120 Hz, 120-300 Hz, 9k-16k Hz.)
 - Save the sequences as plot, data (position, energy, frequency) .csv and "peaks" .csv.
 - Reascript for importing peaks to Reaper not included.
 
