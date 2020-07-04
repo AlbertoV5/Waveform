@@ -12,8 +12,8 @@ Required:
 What it does:
 
 - Read a song and output 4 parson code sequences (Melody, Bass, Snare, HiHats) or (300-1.8k Hz, 0-120 Hz, 120-300 Hz, 9k-16k Hz.
-- Save the sequences as plot, .csv and "peaks" .csv.
-- Reascript for importing onsets to Reaper not included.
+- Save the sequences as plot, data (position, energy, frequency) .csv and "peaks" .csv.
+- Reascript for importing peaks to Reaper not included.
 
 Applications:
 
