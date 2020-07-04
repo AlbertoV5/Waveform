@@ -79,6 +79,8 @@ def GetNotesPeaks3D_Step(limits, song, bpm, barIn, barEnd, measure, unitSize, tr
     x, y, z, lastEnergy = [],[],[], 0
     for i in range(len(topFrequencies)):
         if energy[i] > threshold:
+            if i % 4 == 0:
+                lastEnergy = 0
             if energy[i] > lastEnergy*1.0:
                 for j in range(len(topFrequencies[i][0])): #[freq, energy]
                     x.append(i)

@@ -34,7 +34,7 @@ def Song(file):
     
     songName = file.split("/")[-1:][0]
     print(songName)
-    u1 = int(input(("Press 1 if your song has no fade-in, Press 2 if the fade-in is quiet. Press 3 if the fade-in is loud.\n")))
+    u1 = int(input(("Press 1 if your song has no fade-in, Press 2 if the fade-in is quiet. Press 3 if the fade-in is loud. Press 4 if the fade-in is very loud.\n")))
     
     if u1 == 1:
         songTR = 0.1
@@ -42,8 +42,10 @@ def Song(file):
         songTR = 0.5
     elif u1 == 3:
         songTR = 0.8
+    elif u1 == 4:
+        songTR = 0.96
     else:
-        songTR = 0.8
+        songTR = 0.5
         
     alphaPeak = song.FindAlphaPeak(0,songTR)
 
@@ -61,7 +63,6 @@ def Song(file):
     def Melody():
         noteThreshold = 0.5
         unitSize = 0.25
-        print("\nObtaining Melody...")
         # Continuous, Peaks, 4 by 4, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [300,1800] 
@@ -90,11 +91,10 @@ def Song(file):
     def Snare():
         noteThreshold = 0.5
         unitSize = 0.5
-        print("\nObtaining Snare...")
         # Step, Peaks, 4 by 4, unit 0.5
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [120,300] 
-        barBlock = 2
+        barBlock = 4
         for i in range(maxBars//barBlock):
             barNum = i*barBlock
             x,y,z = ez.GetNotesPeaks3D_Step(freqBands, song, bpm, barNum, barNum+barBlock, measure, unitSize, noteThreshold)
@@ -117,9 +117,8 @@ def Song(file):
         print("Done.")
     
     def Bass():
-        noteThreshold = 0.5
+        noteThreshold = 0.6
         unitSize = 0.25
-        print("\nObtaining Bass...")
         # Continuous, Peaks, all bars, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [0,120] 
@@ -148,7 +147,6 @@ def Song(file):
     def Hats():
         noteThreshold = 0.5
         unitSize = 0.25
-        print("\nObtaining HiHats...")
         # Continuous, Peaks, all bars, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [9000,16000] 
@@ -174,14 +172,21 @@ def Song(file):
         parsons.SaveCSV3D(x, pc_e,pc_f, directory, "dataHats_" + songName)
         print("Done.")
 
+    print("\nObtaining Melody...")
     Melody()
+    
+    print("\nObtaining Snare...")
     Snare()
+    
+    print("\nObtaining Bass...")
     Bass()
+    
+    print("\nObtaining HiHats...")
     Hats()
     
     os.remove(wavFile)
     
-   
+    
 print("Drag and drop your song:\n")    
 Song(input().strip("\'"))
 
