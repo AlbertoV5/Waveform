@@ -7,6 +7,7 @@ Required:
 - Numpy
 - Scipy
 - Matplot
+
 Extra:
 - Pydub for converting .mp3 if you don't want to conver to WAV 16 bits manually
 - CV2 if you want to generate the 4x4 video reference.
