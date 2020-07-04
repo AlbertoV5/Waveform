@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 Get parson's code of 4 frequency bands.
+Chunk Size at 2048 unless specified.
 """
-import getBPM_Bass as bpmb
-import onset
 import os
+import onset
 import easygram as ez
 import parsons
 from pathlib import Path
 from pydub import AudioSegment
-
 
 def toWAV(mp3):
     wav = mp3.split(".")[0] + ".wav"
@@ -47,7 +46,7 @@ def Song(file):
 
     u2 = str(input("Press 1 to get a list of suggested BPMs. Press any other key to skip:\n"))
     if u2 == "1":
-        bpmb.GetBPM(song, onset.CalculateThreshold_RMS(song.data))
+        onset.GetBPMS(song, onset.CalculateThreshold_RMS(song.data))
     
     bpm_user = float(input("Enter selected BPM: \n"))
     measure_user = int(input("Enter how many beats are in a bar: \n"))
@@ -121,7 +120,7 @@ def Song(file):
         barBlock = maxBars
         for i in range(maxBars//barBlock):
             barNum = i*barBlock
-            x,y,z = ez.GetNotesPeaks3D_Continuous(freqBands, song, bpm, barNum, barNum+barBlock, measure, unitSize, noteThreshold)
+            x,y,z = ez.GetNotesPeaks3D_Continuous_4096(freqBands, song, bpm, barNum, barNum+barBlock, measure, unitSize, noteThreshold)
             offset = i*barBlock*measure*(1/unitSize)
             for j in range(len(y)):
                 x_all.append(x[j] + offset)
@@ -184,6 +183,6 @@ def Song(file):
     os.remove(wavFile)
     
     
-print("Drag and drop your song:\n")    
+print("Drag and drop your song:")    
 Song(input().strip("\'"))
 

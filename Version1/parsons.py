@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun 26 17:48:38 2020
-
-@author: albertovaldez
 """
-
-def LoudestBand(x,y):
-    highest = []
-    for i in range(len(y)):
-        m = max(y[i])
-        ind = y[i].index(m)
-        freq = x[ind]
-        highest.append(freq)
-    return highest
     
 def GetPCode_Old(sequence):
     code = ["*"]

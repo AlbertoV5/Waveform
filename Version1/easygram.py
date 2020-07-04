@@ -8,7 +8,7 @@ import onset
 import numpy as np
 import matplotlib.pyplot as plt
 
-def Easygram(limits,song,bpm,barIn,barEnd,measure,unitSize):
+def Easygram_2048(limits,song,bpm,barIn,barEnd,measure,unitSize):
     '''
     Easy spectrogram that uses Frequency Peaks and Frequency Bands to simplify the waveform information.
 
@@ -43,11 +43,11 @@ def Easygram(limits,song,bpm,barIn,barEnd,measure,unitSize):
     amountOfUnits = int(barEnd * measure * (1/unitSize))
 
     unit = (60/bpm) * song.sampfreq * unitSize
-    unitRange = 2048
+    chunkSize = 2048
     pai = song.peakAlphaIndex
     
     for i in range(unitStar,amountOfUnits):
-        start, end = pai + int(i * unit), pai + int(i * unit) + unitRange
+        start, end = pai + int(i * unit), pai + int(i * unit) + chunkSize
         chunk = song.data[start:end]
         freqs, fft = onset.CalculateFFT_dB(chunk, song.sampfreq, limits[0], limits[len(limits)-1])
         energy.append(np.max(fft)) # max energy point
@@ -68,13 +68,28 @@ def Easygram_Sum(limits,song,bpm,barIn,barEnd,measure,unitSize):
         start, end = pai + int(i * unit), pai + int(i * unit) + unitRange
         chunk = song.data[start:end]
         freqs, fft = onset.CalculateFFT_dB(chunk, song.sampfreq, limits[0], limits[len(limits)-1])
-        energy.append(np.sum(fft)) # min energy point
+        energy.append(np.sum(fft))
         topFrequencies.append(onset.GetTopFrequencies(freqs, fft, start, 1))
         
     return energy,topFrequencies
 
+def Easygram_4096(limits,song,bpm,barIn,barEnd,measure,unitSize):
+    energy, topFrequencies = [], []
+    unitStar = int(barIn * measure * (1/unitSize))
+    amountOfUnits = int(barEnd * measure * (1/unitSize))
+    unit = (60/bpm) * song.sampfreq * unitSize
+    chunkSize, pai = 4096, song.peakAlphaIndex
+    
+    for i in range(unitStar,amountOfUnits):
+        start, end = pai + int(i * unit), pai + int(i * unit) + chunkSize
+        chunk = song.data[start:end]
+        freqs, fft = onset.CalculateFFT_dB(chunk, song.sampfreq, limits[0], limits[len(limits)-1])
+        energy.append(np.max(fft)) # max energy point
+        topFrequencies.append(onset.GetTopFrequencies(freqs, fft, start, 1))
+    return energy,topFrequencies
+
 def GetNotesPeaks3D_Step(limits, song, bpm, barIn, barEnd, measure, unitSize, tr):
-    energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize)
+    energy, topFrequencies = Easygram_2048(limits, song, bpm, barIn, barEnd, measure, unitSize)
     threshold = (max(energy)-min(energy))*tr + min(energy)
     x, y, z, lastEnergy = [],[],[], 0
     for i in range(len(topFrequencies)):
@@ -112,7 +127,19 @@ def GetNotesPeaks3D_Step_Sum(limits, song, bpm, barIn, barEnd, measure, unitSize
     return x, y, z
 
 def GetNotesPeaks3D_Continuous(limits, song, bpm, barIn, barEnd, measure, unitSize, tr):
-    energy, topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize)
+    energy, topFrequencies = Easygram_2048(limits, song, bpm, barIn, barEnd, measure, unitSize)
+    threshold = (max(energy)-min(energy))*tr + min(energy)
+    x, y, z = [],[],[]
+    for i in range(len(topFrequencies)):
+        if energy[i] > threshold:
+            for j in range(len(topFrequencies[i][0])): #[freq, energy]
+                x.append(i)
+                y.append(topFrequencies[i][1][j])
+                z.append(topFrequencies[i][0][j])
+    return x, y, z
+
+def GetNotesPeaks3D_Continuous_4096(limits, song, bpm, barIn, barEnd, measure, unitSize, tr):
+    energy, topFrequencies = Easygram_4096(limits, song, bpm, barIn, barEnd, measure, unitSize)
     threshold = (max(energy)-min(energy))*tr + min(energy)
     x, y, z = [],[],[]
     for i in range(len(topFrequencies)):
@@ -136,7 +163,7 @@ def GetNotesPeaks3D_Continuous_Sum(limits, song, bpm, barIn, barEnd, measure, un
     return x, y, z
 
 def PlotGridEnergy(limits, song, bpm, barIn, barEnd, measure, unitSize, name):
-    multiband,energy,topFrequencies = Easygram(limits, song, bpm, barIn, barEnd, measure, unitSize, False)
+    multiband,energy,topFrequencies = Easygram_2048(limits, song, bpm, barIn, barEnd, measure, unitSize, False)
     x, y = range(len(energy)), energy
     xticks = [i*(1/unitSize) for i in range(1 + (barEnd*measure) - (barIn*measure))]
     ylim = (0,3000)

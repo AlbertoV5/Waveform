@@ -175,10 +175,10 @@ def CreateVideo(path, fileName, bpm, color1, color2):
         
     out.release()
 
-CreateVideo(os.getcwd() + "/mp3/", "dataMelody_spectre", 128, "b", "k")
-CreateVideo(os.getcwd() + "/mp3/", "dataSnare_spectre", 128, "b", "k")
-CreateVideo(os.getcwd() + "/mp3/", "dataBass_spectre", 128, "b", "k")
-CreateVideo(os.getcwd() + "/mp3/", "dataHats_spectre", 128, "b", "k")
+CreateVideo(os.getcwd() + "/songs/", "dataMelody_spectre", 128, "b", "k")
+CreateVideo(os.getcwd() + "/songs/", "dataSnare_spectre", 128, "b", "k")
+CreateVideo(os.getcwd() + "/songs/", "dataBass_spectre", 128, "b", "k")
+CreateVideo(os.getcwd() + "/songs/", "dataHats_spectre", 128, "b", "k")
 
 
 

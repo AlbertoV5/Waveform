@@ -1,12 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
-https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft.html
-
 '''
 import numpy as np
 import scipy
-import scipy.fftpack as fftpk
-from scipy.io import wavfile
 import matplotlib.pyplot as plt
+from scipy.io import wavfile
+import scipy.fftpack as fftpk
 
 class Song():
     def __init__(self, songName, start = 0, end = 0):
@@ -33,7 +33,7 @@ class Song():
         
         print("\nAudio file was read.")
         
-    def GetRMS(self):
+    def GetRMS(self): # decibels
         rms = 20*np.log10((np.mean(np.absolute(self.data))))
         return int(rms*100)/100
 
@@ -262,7 +262,7 @@ def CalculateFFT_dB(chunk, sampfreq, HPF, LPF):
 
 
 def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq, base):
-        #Find the highest power in the frequency range in the whole song
+        #Find the highest power in the frequency range in the whole daga
         #Use it as threshold multiplied by the ratio received
         high = []
         for i in range(int((len(data)/chunk_size))-1):
@@ -364,4 +364,26 @@ def mean(List): #average value
     return sum(List)/len(List)
 def median(List): #middle of the list
     return sorted(List)[int(len(List)/2)]
+
+
+def GetBPMS(song, tr):
+    #tr = onset.CalculateThreshold_RMS(song.data)
+    
+    print("\nCalculating Possible BPMs...")
+    song.FindAlphaPeak(0,0.7)
+    song.GetNoteOnset(unit = 2048, chunk_size = 4096, threshold_ratio = tr, HPF = 0, LPF = 120, base = 10)
+    song.GetPeaks(x = 1024)
+    print("\nCalculated possible BPMs:")
+    
+    magicRatio = (128/129.19921875)
+    magicRatio2 = 1
+    
+    bpm1 = song.GetBPM()*magicRatio
+    
+    bpm2 = int(song.GetBPM_PKS()*magicRatio2*100)/100
+    bpmBatch = [bpm1, bpm1*1.5, bpm2, bpm2*1.5]
+    
+    print(bpmBatch)
+    
+    return bpmBatch
 
