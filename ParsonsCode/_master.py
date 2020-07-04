@@ -59,7 +59,7 @@ def Song(file):
     print("Song duration in bars: " + str(maxBars))
         
     def Melody():
-        noteThreshold = 0.6
+        noteThreshold = 0.5
         unitSize = 0.25
         print("\nObtaining Melody...")
         # Continuous, Peaks, 4 by 4, unit 0.25
@@ -88,13 +88,13 @@ def Song(file):
         print("Done.")
         
     def Snare():
-        noteThreshold = 0.6
+        noteThreshold = 0.5
         unitSize = 0.5
         print("\nObtaining Snare...")
         # Step, Peaks, 4 by 4, unit 0.5
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [120,300] 
-        barBlock = 4
+        barBlock = 2
         for i in range(maxBars//barBlock):
             barNum = i*barBlock
             x,y,z = ez.GetNotesPeaks3D_Step(freqBands, song, bpm, barNum, barNum+barBlock, measure, unitSize, noteThreshold)
@@ -117,7 +117,7 @@ def Song(file):
         print("Done.")
     
     def Bass():
-        noteThreshold = 0.7
+        noteThreshold = 0.5
         unitSize = 0.25
         print("\nObtaining Bass...")
         # Continuous, Peaks, all bars, unit 0.25
@@ -146,7 +146,7 @@ def Song(file):
         print("Done.")
 
     def Hats():
-        noteThreshold = 0.7
+        noteThreshold = 0.5
         unitSize = 0.25
         print("\nObtaining HiHats...")
         # Continuous, Peaks, all bars, unit 0.25
