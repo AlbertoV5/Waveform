@@ -43,7 +43,6 @@ def Song(file):
         songTR = 0.5
         
     alphaPeak = song.FindAlphaPeak(0,songTR)
-
     u2 = str(input("Press 1 to get a list of suggested BPMs. Press any other key to skip:\n"))
     if u2 == "1":
         onset.GetBPMS(song, onset.CalculateThreshold_RMS(song.data))
@@ -120,7 +119,7 @@ def Song(file):
         barBlock = maxBars
         for i in range(maxBars//barBlock):
             barNum = i*barBlock
-            x,y,z = ez.GetNotesPeaks3D_Continuous_4096(freqBands, song, bpm, barNum, barNum+barBlock, measure, unitSize, noteThreshold)
+            x,y,z = ez.GetNotesPeaks3D_Continuous(freqBands, song, bpm, barNum, barNum+barBlock, measure, unitSize, noteThreshold)
             offset = i*barBlock*measure*(1/unitSize)
             for j in range(len(y)):
                 x_all.append(x[j] + offset)

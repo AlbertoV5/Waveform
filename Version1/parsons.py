@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 """
-    
 def GetPCode_Old(sequence):
     code = ["*"]
     for i in range(len(sequence)-1):
