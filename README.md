@@ -24,9 +24,8 @@ Applications:
 To do:
 
 - Reading and exporting the data is pretty much done, need to interpret the pc in more creative ways:
--- Cancelling octave frequencies from adjacent bands like melody and hihats in order to remove "sss" from vocals bleeding into hihats.
--- Classify same frequency sequences as a sustained note.
--- etc.
+ - Cancelling octave frequencies from adjacent bands like melody and hihats in order to remove "sss" from vocals bleeding into hihats.
+ - Classify same frequency sequences as a sustained note.
 - Add the "timbre" frequency band as in 1.8k-9k Hz to get more info. about the instruments/genres or section of the song.
 - Add a section function to determine different sections of the song, include RMS, timbre and "Snapshot method" for similarities between bars and repetitions.
 - Add an actual BPM detection function that can verify the bpm from more information apart from bass note onset.
