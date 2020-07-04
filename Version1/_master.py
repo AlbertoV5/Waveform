@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul  2 19:32:22 2020
-
-@author: albertovaldez
+Get parson's code of 4 frequency bands.
 """
 import getBPM_Bass as bpmb
 import onset
@@ -13,7 +11,6 @@ import parsons
 from pathlib import Path
 from pydub import AudioSegment
 
-d = os.getcwd()
 
 def toWAV(mp3):
     wav = mp3.split(".")[0] + ".wav"
@@ -33,7 +30,7 @@ def Song(file):
     
     songName = file.split("/")[-1:][0]
     print(songName)
-    u1 = int(input(("Press 1 if your song has no fade-in, Press 2 if the fade-in is quiet. Press 3 if the fade-in is loud.\n")))
+    u1 = int(input(("Press 1 if your song has no fade-in, Press 2 if the fade-in is quiet. Press 3 if the fade-in is loud. Press 4 if the fade-in is very loud.\n")))
     
     if u1 == 1:
         songTR = 0.1
@@ -41,8 +38,10 @@ def Song(file):
         songTR = 0.5
     elif u1 == 3:
         songTR = 0.8
+    elif u1 == 4:
+        songTR = 0.96
     else:
-        songTR = 0.8
+        songTR = 0.5
         
     alphaPeak = song.FindAlphaPeak(0,songTR)
 
@@ -58,9 +57,8 @@ def Song(file):
     print("Song duration in bars: " + str(maxBars))
         
     def Melody():
-        noteThreshold = 0.6
+        noteThreshold = 0.5
         unitSize = 0.25
-        print("\nObtaining Melody...")
         # Continuous, Peaks, 4 by 4, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [300,1800] 
@@ -83,13 +81,12 @@ def Song(file):
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
         ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotMelody_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV3D(x, pc_e,pc_f, directory, "dataMelody_" + songName)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataMelody_" + songName)
         print("Done.")
         
     def Snare():
-        noteThreshold = 0.6
+        noteThreshold = 0.5
         unitSize = 0.5
-        print("\nObtaining Snare...")
         # Step, Peaks, 4 by 4, unit 0.5
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [120,300] 
@@ -112,13 +109,12 @@ def Song(file):
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
         ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotSnare_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV3D(x, pc_e,pc_f, directory, "dataSnare_" + songName)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataSnare_" + songName)
         print("Done.")
     
     def Bass():
-        noteThreshold = 0.7
+        noteThreshold = 0.6
         unitSize = 0.25
-        print("\nObtaining Bass...")
         # Continuous, Peaks, all bars, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [0,120] 
@@ -141,13 +137,12 @@ def Song(file):
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
         ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotBass_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV3D(x, pc_e,pc_f, directory, "dataBass_" + songName)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataBass_" + songName)
         print("Done.")
 
     def Hats():
-        noteThreshold = 0.7
+        noteThreshold = 0.5
         unitSize = 0.25
-        print("\nObtaining HiHats...")
         # Continuous, Peaks, all bars, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
         freqBands = [9000,16000] 
@@ -170,20 +165,25 @@ def Song(file):
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
         ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotHats_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV3D(x, pc_e,pc_f, directory, "dataHats_" + songName)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory,"dataHats_" + songName)
+
         print("Done.")
 
+    print("\nObtaining Melody...")
     Melody()
-    Snare()
-    Bass()
-    Hats()
-
-    try:
-        os.remove(wavFile)
-    except:
-        pass
     
-   
+    print("\nObtaining Snare...")
+    Snare()
+    
+    print("\nObtaining Bass...")
+    Bass()
+    
+    print("\nObtaining HiHats...")
+    Hats()
+    
+    os.remove(wavFile)
+    
+    
 print("Drag and drop your song:\n")    
 Song(input().strip("\'"))
 

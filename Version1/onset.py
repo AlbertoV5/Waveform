@@ -1,20 +1,5 @@
 '''
-This script receives:
-    
-sampfreq, data = wavfile.read()
-from scipy.io import wavfile
-
-and returns onsets depending on what paremeters you set. 
-Low and high pass filters-like included.
-Included Transient Points.
-
-To do:
-    -Use right channel for control. 
-    -Use bpm against samples or note onset for accuracy percentage
-    -Compare different methods against each other to find differences and trends
-
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.fft.fft.html
-https://www.w3resource.com/python-exercises/numpy/python-numpy-exercise-31.php
 
 '''
 import numpy as np
