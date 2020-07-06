@@ -35,3 +35,9 @@ To do:
 - Add a section function to determine different sections of the song, include RMS, timbre and "Snapshot method" for similarities between bars and repetitions.
 - Add an actual BPM detection function that can verify the bpm from more information apart from bass note onset.
 - Considering harmonic detection for sections as a tonal reference.
+
+Resources:
+- Music Information Retrieval https://musicinformationretrieval.com/index.html
+- Unity MIR http://hellomeow.net/rhythmtool/documentation/html/N_RhythmTool.htm
+- Tutorials on audio digital signal processing https://www.youtube.com/watch?v=daB9naGBVv4
+
