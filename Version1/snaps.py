@@ -65,10 +65,10 @@ def Structure(snaps):
     scores = BarVSGrid(bar)
     return scores
 
-melody = Structure(Snaps("songs/reaction/dataMelody_JAMES LANDINO - REACTION (FT.csv"))
-snare = Structure(Snaps("songs/reaction/dataSnare_JAMES LANDINO - REACTION (FT.csv"))
-bass = Structure(Snaps("songs/reaction/dataBass_JAMES LANDINO - REACTION (FT.csv"))
-hats = Structure(Snaps("songs/reaction/dataHats_JAMES LANDINO - REACTION (FT.csv"))
+melody = Structure(Snaps("songs/spectre/dataMelody_spectre.csv"))
+snare = Structure(Snaps("songs/spectre/dataSnare_spectre.csv"))
+bass = Structure(Snaps("songs/spectre/dataBass_spectre.csv"))
+hats = Structure(Snaps("songs/spectre/dataHats_spectre.csv"))
 
 l = [len(melody), len(snare), len(bass), len(hats)]
 scores = []
