@@ -1,5 +1,5 @@
 # Waveform Parsons Code
- Read waveform and do stuff
+Music Information Retrieval project.
 
 Python 3.7
 
