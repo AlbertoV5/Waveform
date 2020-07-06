@@ -11,3 +11,4 @@ import onset
 song = onset.Song("songs/spectre/spectre.mp3")
 
 onset.GetBPMS(song, song.CalculateThreshold_RMS())
+

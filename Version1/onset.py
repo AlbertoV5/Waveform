@@ -42,41 +42,30 @@ class Song():
         if clear:
             os.remove(songName)
         
-        
     def GetRMS(self): # decibels
         rms = 20*np.log10((np.mean(np.absolute(self.data))))
         return int(rms*100)/100
 
     def FindAlphaPeak(self, start = 0, threshold = 0.8):
-        index = 0
-        self.peakAlpha = 0
-        self.peakAlphaIndex = 0
-        for i in self.data:
-            if abs(i) > threshold:
-                self.peakAlpha = i
-                self.peakAlphaIndex = index
-                break
-            index +=1
-        peakAlphaIndex_sec = int((self.peakAlphaIndex/self.sampfreq)*1000)/1000
-        print("Alpha peak is at: " + str(peakAlphaIndex_sec) + " seconds.")
-        self.length = len(self.data) - self.peakAlphaIndex
-        self.length_seconds = self.length / 44100
-        return peakAlphaIndex_sec
+        for i in range(len(self.data)):
+            if abs(self.data[i]) > threshold:
+                self.peakAlpha = self.data[i]
+                self.peakAlphaIndex = i
+                self.length = len(self.data) - self.peakAlphaIndex
+                self.length_seconds = self.length / 44100
+                return int((self.peakAlphaIndex/self.sampfreq)*1000)/1000
         
-    def GetNoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500, base = 10):
+    def GetNoteOnset(self, unit = 2048, chunk_size = 2048, threshold_ratio = 0.8, HPF = 20, LPF = 500):
         sus, on, self.notes = -1, -1, []
         note_on = 0
-        threshold = Get_Threshold(self.data, chunk_size, threshold_ratio, HPF, LPF, self.sampfreq, base)
-            
+        threshold = Get_Threshold(self.data, chunk_size, threshold_ratio, HPF, LPF, self.sampfreq)
         print("Ratio: " + str(threshold_ratio) + " = Threshold: " + str(threshold))
-        
-        #song.length Prevents going over the limit and crashing
-        
+                
         for i in range(self.length//unit):
             start = unit*(i) + self.peakAlphaIndex
             end = unit*(i) + chunk_size + self.peakAlphaIndex
             
-            on = ReadChunk(self.data[start:end], threshold, LPF, HPF, self.sampfreq, base)
+            on = ReadChunk(self.data[start:end], threshold, LPF, HPF, self.sampfreq)
             if on == 1 and sus == -1: #Note change
                 note_on = start
                 sus = 1
@@ -86,30 +75,20 @@ class Song():
                 sus = -1
                     
     def GetPeaks(self, x):
-        self.pks = []
-        self.pksValue = []
-        for i in self.notes:   
-            #Limits of data
+        self.pks, self.pksValue = [],[]
+        for i in self.notes: #notes as an array of start,end pairs
             try:
                 start = i[0] - x
                 end = i[1] + x
                 noteSamples = self.data[start:end]
-                top = np.amax(noteSamples)
-                bot = np.amin(noteSamples)
+                point = np.amax(np.absolute(noteSamples))
             except:
                 start = i[0]
                 end = i[1]
                 noteSamples = self.data[start:end]
-                top = np.amax(noteSamples)
-                bot = np.amin(noteSamples)
-                
-            # Circumvent indexing an absolute value
-            if top > abs(bot):
-                point = top
-            else:
-                point = bot
+                point = np.amax(np.absolute(noteSamples))
             
-            transientPoint = int(np.max(np.where(noteSamples == point))) + start
+            transientPoint = np.min(np.where(np.absolute(noteSamples) == point)) + start
             self.pks.append(transientPoint)
             self.pksValue.append(point)
         
@@ -223,7 +202,7 @@ def PlotPeaks2(x, y, xticks, ylim, name):
     plt.savefig(name)
     plt.show()
 
-def ReadChunk(chunk, threshold, LPF, HPF, sampfreq, base):
+def ReadChunk(chunk, threshold, LPF, HPF, sampfreq):
     FFT = abs(scipy.fft.fft(chunk))
     freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
     
@@ -236,15 +215,9 @@ def ReadChunk(chunk, threshold, LPF, HPF, sampfreq, base):
     indexLPF = int(max(np.where(freqs == freqsLPF[len(freqsLPF)-1])))
         
     FFT = FFT[range(len(FFT)//2)]
-    
     FFTF = FFT[indexHPF:indexLPF]
     
-    FFTF = FFTF + 1
-    FFTF = np.log(FFTF) / np.log(base)
-    FFTF = 10*FFTF
-    
     if np.sum(np.absolute(FFTF)) > threshold:
-        #print(np.sum(FFTF))
         frequency = 1
     else:
         frequency = -1
@@ -269,15 +242,11 @@ def CalculateFFT_dB(chunk, sampfreq, HPF, LPF):
     FFTF = FFT[indexHPF:indexLPF]
     freqsF = freqs[indexHPF:indexLPF]
     
-    FFTF = FFTF + 1
-    FFTF = np.log10(FFTF)
-    FFTF = FFTF * 10
-    
     return freqsF, FFTF 
 
 
-def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq, base):
-        #Find the highest power in the frequency range in the whole daga
+def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq):
+        #Find the highest power in the frequency range in the whole data
         #Use it as threshold multiplied by the ratio received
         high = []
         for i in range(int((len(data)/chunk_size))-1):
@@ -299,13 +268,8 @@ def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq, base):
             FFT = FFT[range(len(FFT)//2)]
             
             FFTF = FFT[indexHPF:indexLPF]
-
-            FFTF = FFTF + 1
-            FFTF = np.log(FFTF) / np.log(base)
-            FFTF = 10*FFTF
             
-            s = np.sum(np.absolute(FFTF))
-            high.append(s)
+            high.append(np.sum(np.absolute(FFTF)))
             
         threshold = (np.max(high))
         return threshold * ratio
@@ -382,11 +346,10 @@ def median(List): #middle of the list
 
 
 def GetBPMS(song, tr):
-    #tr = onset.CalculateThreshold_RMS(song.data)
     
     print("\nCalculating Possible BPMs...")
     song.FindAlphaPeak(0,tr)
-    song.GetNoteOnset(unit = 2048, chunk_size = 4096, threshold_ratio = tr, HPF = 0, LPF = 120, base = 10)
+    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 0, LPF = 120)
     song.GetPeaks(x = 1024)
     print("\nCalculated possible BPMs:")
     

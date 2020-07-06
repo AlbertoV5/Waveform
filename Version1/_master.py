@@ -31,9 +31,10 @@ def Song(file):
         songTR = 0.5
         
     alphaPeak = song.FindAlphaPeak(0,songTR)
+    print("Song starts at " + str(alphaPeak) + " seconds.")
     u2 = str(input("Press 1 to get a list of suggested BPMs. Press any other key to skip:\n"))
     if u2 == "1":
-        onset.GetBPMS(song, onset.CalculateThreshold_RMS(song.data))
+        onset.GetBPMS(song, song.CalculateThreshold_RMS())
     
     bpm_user = float(input("Enter selected BPM: \n"))
     measure_user = int(input("Enter how many beats are in a bar: \n"))
