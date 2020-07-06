@@ -26,13 +26,32 @@ def Grid_Unit(x, y, z):
         
     return snaps
     
-
 def Snaps(file):
     csv = pd.read_csv(file)
     x = [float(i) for i in csv["Position"]] 
     y = [float(i) for i in csv["Energy"]] 
     z = [float(i) for i in csv["Frequency"]] 
     return Grid_Unit(x,y,z)
+
+def BarVSBar(bar):
+    scores = []
+    for b in range(1,len(bar)-1):
+        score = 0
+        for i in range(len(bar[b])):
+            if bar[b][i][1] != 0 and bar[b+1][i][1] != 0:
+                score = score + 1
+        scores.append(score)
+    return scores
+
+def BarVSGrid(bar):
+    scores = []
+    for b in range(0,len(bar)):
+        score = 0
+        for i in range(len(bar[b])):
+            if bar[b][i][1] != 0:
+                score = score + 1
+        scores.append(score)
+    return scores
 
 def Structure(snaps):
     bar, unit = [],[]
@@ -43,23 +62,23 @@ def Structure(snaps):
             unit = []
         unit.append([x,y,z])
     
-    scores = []
-    for b in range(1,len(bar)-1):
-        score = 0
-        for i in range(len(bar[b])):
-            if bar[b][i][1] != 0 and bar[b+1][i][1] != 0:
-                score = score + 1
-        scores.append(score)
+    scores = BarVSGrid(bar)
+    return scores
+
+melody = Structure(Snaps("songs/reaction/dataMelody_JAMES LANDINO - REACTION (FT.csv"))
+snare = Structure(Snaps("songs/reaction/dataSnare_JAMES LANDINO - REACTION (FT.csv"))
+bass = Structure(Snaps("songs/reaction/dataBass_JAMES LANDINO - REACTION (FT.csv"))
+hats = Structure(Snaps("songs/reaction/dataHats_JAMES LANDINO - REACTION (FT.csv"))
+
+l = [len(melody), len(snare), len(bass), len(hats)]
+scores = []
+for i in range(min(l)):
+    scores.append(melody[i] + snare[i] + bass[i] + hats[i])
     
-    print(scores)
-    plt.grid(True)
-    plt.plot(scores)
-    plt.show()
-
-Structure(Snaps("songs/spectre/dataMelody_spectre.csv"))
-Structure(Snaps("songs/spectre/dataSnare_spectre.csv"))
-Structure(Snaps("songs/spectre/dataBass_spectre.csv"))
-Structure(Snaps("songs/spectre/dataHats_spectre.csv"))
-
+plt.figure(figsize = (10,5))
+plt.xticks([i*4 for i in range((len(melody) + 4)//4)])
+plt.grid(True)
+plt.plot(scores)
+plt.show()
 
 
