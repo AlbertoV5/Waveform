@@ -7,31 +7,41 @@ import scipy
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 import scipy.fftpack as fftpk
+from pydub import AudioSegment
+import os
+
+def toWAV(mp3):
+    wav = mp3.split(".")[0] + ".wav"
+    sound = AudioSegment.from_mp3(mp3)
+    sound.export(wav, format="wav")
+    print("Converted mp3 to wav.")
+    return wav
 
 class Song():
-    def __init__(self, songName, start = 0, end = 0):
+    def __init__(self, songName, start_sec = 0, end_sec = 0):
+        if ".mp3" in songName:
+            songName = toWAV(songName)
+            clear = True
+            
         print("Reading audio file...")
         audiofile = wavfile.read(songName)
-        self.sampfreq = audiofile[0]
-        self.data = audiofile[1]/32767 #16 bits
+        self.sampfreq, self.data = audiofile[0], audiofile[1]/32767 #16 bits
         self.peakAlphaIndex = 0
         self.length = len(self.data) - self.peakAlphaIndex
         self.length_seconds = self.length / 44100
 
-        try: # 1 channel only
-            if len(self.data[0]) > 1: # checks for list >= 2
-                channels = len(self.data[0])
-                self.data = [(i[0] + i[1]) / channels for i in self.data]
-        except:
-            pass
-        start = start * self.sampfreq
-        end = end * self.sampfreq
-        if end != 0:
-            self.data = self.data[start:end]
-        else:
-            pass
-        
+        self.channels = len(self.data[0])
+        if self.channels == 2: # checks for stereo
+            self.data = np.add(self.data[:, [0]], self.data[:, [1]]) / self.channels
+            print(len(self.data))
+            
+        if end_sec != 0:
+            self.data = self.data[int(start_sec * self.sampfreq):int(end_sec * self.sampfreq)]
+            
         print("\nAudio file was read.")
+        if clear:
+            os.remove(songName)
+        
         
     def GetRMS(self): # decibels
         rms = 20*np.log10((np.mean(np.absolute(self.data))))
@@ -99,7 +109,7 @@ class Song():
             else:
                 point = bot
             
-            transientPoint = int(max(np.where(noteSamples == point))[0]) + start
+            transientPoint = int(np.max(np.where(noteSamples == point))) + start
             self.pks.append(transientPoint)
             self.pksValue.append(point)
         
@@ -142,6 +152,12 @@ class Song():
                 elif bpm > maxBPM:
                     bpm = bpm/2
         return bpm 
+    
+    def CalculateThreshold_RMS(self):
+        rms = GetRMS(self.data)
+        floor = -96
+        tr = 1 - (rms/floor)
+        return int(tr * 10000)/10000
 
     def PlotPeaks(self):
         x = self.pks
@@ -206,7 +222,6 @@ def PlotPeaks2(x, y, xticks, ylim, name):
     plt.xticks(xticks)
     plt.savefig(name)
     plt.show()
-
 
 def ReadChunk(chunk, threshold, LPF, HPF, sampfreq, base):
     FFT = abs(scipy.fft.fft(chunk))
@@ -370,7 +385,7 @@ def GetBPMS(song, tr):
     #tr = onset.CalculateThreshold_RMS(song.data)
     
     print("\nCalculating Possible BPMs...")
-    song.FindAlphaPeak(0,0.7)
+    song.FindAlphaPeak(0,tr)
     song.GetNoteOnset(unit = 2048, chunk_size = 4096, threshold_ratio = tr, HPF = 0, LPF = 120, base = 10)
     song.GetPeaks(x = 1024)
     print("\nCalculated possible BPMs:")

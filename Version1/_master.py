@@ -9,23 +9,11 @@ import onset
 import easygram as ez
 import parsons
 from pathlib import Path
-from pydub import AudioSegment
-
-def toWAV(mp3):
-    wav = mp3.split(".")[0] + ".wav"
-    sound = AudioSegment.from_mp3(mp3)
-    sound.export(wav, format="wav")
-    print("Converted mp3 to wav.")
-    return wav
 
 def Song(file):
     p = Path(file)
     directory = str(p.parent) + "/"
-    if ".mp3" in file:
-        wavFile = toWAV(file)
-        song = onset.Song(wavFile)
-    else:
-        song = onset.Song(file)
+    song = onset.Song(file)
     
     songName = file.split("/")[-1:][0]
     print(songName)
@@ -178,8 +166,6 @@ def Song(file):
     
     print("\nObtaining HiHats...")
     Hats()
-    
-    os.remove(wavFile)
     
     
 print("Drag and drop your song:")    
