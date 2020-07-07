@@ -59,10 +59,7 @@ def Song(file):
                 y_energy.append(y[j])
                 z_freq.append(z[j])
             
-        peaks = []
-        for i in x_all:
-            peaks.append(i * (60/bpm)*unitSize * song.sampfreq)
-            
+        peaks = [i * (60/bpm) * unitSize * song.sampfreq for i in x_all]
         onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksMelody" + "_" + songName.split(".")[0] + ".csv")
         
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)

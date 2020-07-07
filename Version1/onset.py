@@ -33,7 +33,6 @@ class Song():
         self.channels = len(self.data[0])
         if self.channels == 2: # checks for stereo
             self.data = np.add(self.data[:, [0]], self.data[:, [1]]) / self.channels
-            print(len(self.data))
             
         if end_sec != 0:
             self.data = self.data[int(start_sec * self.sampfreq):int(end_sec * self.sampfreq)]
@@ -88,7 +87,7 @@ class Song():
                 noteSamples = self.data[start:end]
                 point = np.amax(np.absolute(noteSamples))
             
-            transientPoint = np.min(np.where(np.absolute(noteSamples) == point)) + start
+            transientPoint = np.max(np.where(np.absolute(noteSamples) == point)) + start
             self.pks.append(transientPoint)
             self.pksValue.append(point)
         
@@ -284,7 +283,7 @@ def SavePeaks(peaks, sampfreq, channels, alphaPeak, name):
     
 def GetRMS(part):
     rms = 20*np.log10((np.mean(np.absolute(part))))
-    print("RMS is: " + str(rms) + " dB")
+    #print("RMS is: " + str(rms) + " dB")
     return rms
 
 def CalculateThreshold_RMS(data):
@@ -326,7 +325,7 @@ def GetTopFrequencies(a,b,start,num = 5):
     x, y = list(a), list(b)
     freq,amp = [],[]
     for i in range(num):
-        m = (max(y))
+        m = max(max(y))
         f = x[y.index(m)]
         freq.append(f)
         amp.append(m)
@@ -344,24 +343,57 @@ def mean(List): #average value
 def median(List): #middle of the list
     return sorted(List)[int(len(List)/2)]
 
+def GetBPMS_All(song, tr):
+    return GetBPMS(song, tr), GetBPMS2(song, tr)
 
 def GetBPMS(song, tr):
-    
     print("\nCalculating Possible BPMs...")
-    song.FindAlphaPeak(0,tr)
-    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 0, LPF = 120)
-    song.GetPeaks(x = 1024)
+    bpms1 = BPM_Bass(song, tr)
+    bpms2 = BPM_High(song, tr)
     print("\nCalculated possible BPMs:")
-    
-    magicRatio = (128/129.19921875)
-    magicRatio2 = 1
-    
-    bpm1 = song.GetBPM()*magicRatio
-    
-    bpm2 = int(song.GetBPM_PKS()*magicRatio2*100)/100
-    bpmBatch = [bpm1, bpm1*1.5, bpm2, bpm2*1.5]
-    
-    print(bpmBatch)
-    
-    return bpmBatch
+    print(bpms1, bpms2)
+    return bpms1, bpms2
 
+def GetBPMS2(song, tr):
+    print("\nCalculating Possible BPMs...")
+    bpms1 = BPM_Bass2(song, tr)
+    bpms2 = BPM_High2(song, tr)
+    print("\nCalculated possible BPMs:")
+    print(bpms1, bpms2)
+    return bpms1, bpms2
+
+def BPM_Bass(song, tr):
+    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 0, LPF = 120)
+    magicRatio = (128/129.19921875)
+    magicRatio2 = 1/magicRatio
+    bpm1 = int(song.GetBPM()*magicRatio*100)/100
+    bpm2 = int(song.GetBPM()*magicRatio2*100)/100
+    return [bpm1, bpm2]
+    
+def BPM_High(song, tr):
+    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 14000, LPF = 16000)
+    magicRatio = (128/129.19921875)
+    magicRatio2 = 1/magicRatio
+    bpm1 = int(song.GetBPM()*magicRatio*100)/100
+    bpm2 = int(song.GetBPM()*magicRatio2*100)/100
+    return [bpm1, bpm2]
+
+def BPM_Bass2(song, tr):
+    song.GetNoteOnset(unit = 1024, chunk_size = 1024, threshold_ratio = tr, HPF = 0, LPF = 120)
+    magicRatio = (128/129.19921875)
+    magicRatio2 = 1/magicRatio
+    bpm1 = int(song.GetBPM()*magicRatio*100)/100
+    bpm2 = int(song.GetBPM()*magicRatio2*100)/100
+    return [bpm1, bpm2]
+    
+def BPM_High2(song, tr):
+    song.GetNoteOnset(unit = 1024, chunk_size = 1024, threshold_ratio = tr, HPF = 14000, LPF = 16000)
+    magicRatio = (128/129.19921875)
+    magicRatio2 = 1/magicRatio
+    bpm1 = int(song.GetBPM()*magicRatio*100)/100
+    bpm2 = int(song.GetBPM()*magicRatio2*100)/100
+    return [bpm1, bpm2]
+
+
+    
+    

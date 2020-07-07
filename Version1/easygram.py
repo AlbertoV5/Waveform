@@ -38,7 +38,7 @@ def Easygram_2048(limits,song,bpm,barIn,barEnd,measure,unitSize):
 
     TO DO: Add number of top frequencies > 1, add option to enable PlotPeaks2
     '''
-    energy, topFrequencies = [], []
+    energy, topFrequencies = [],[]
     unitStar = int(barIn * measure * (1/unitSize))
     amountOfUnits = int(barEnd * measure * (1/unitSize))
 
@@ -50,7 +50,7 @@ def Easygram_2048(limits,song,bpm,barIn,barEnd,measure,unitSize):
         start, end = pai + int(i * unit), pai + int(i * unit) + chunkSize
         chunk = song.data[start:end]
         freqs, fft = onset.CalculateFFT_dB(chunk, song.sampfreq, limits[0], limits[len(limits)-1])
-        energy.append(np.max(fft)) # max energy point
+        energy.append(np.max(fft))
         topFrequencies.append(onset.GetTopFrequencies(freqs, fft, start, 1))
         
     return energy,topFrequencies
