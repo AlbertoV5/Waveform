@@ -277,25 +277,25 @@ def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq, rms):
             end = chunk_size*(i) + chunk_size
             chunk = data[start:end]
             
-            if GetRMS(chunk) > rms*2: # -14 LUFS RMS =  > -28 LUFS, -24 LUFS = > - 48 LUFS
-                FFT = abs(scipy.fft.fft(chunk))
-                freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
-    
-                freqs = freqs[range(len(FFT)//2)]
-    
-                freqsHPF = freqs[freqs > HPF]
-                freqsLPF = freqs[freqs < LPF]
-                
-                indexHPF = int(max(np.where(freqs == freqsHPF[0])))
-                indexLPF = int(max(np.where(freqs == freqsLPF[len(freqsLPF)-1])))
-                
-                FFT = FFT[range(len(FFT)//2)]
-                
-                FFTF = FFT[indexHPF:indexLPF]
-                
-                total.append(np.sum(np.absolute(FFTF)))
+            FFT = abs(scipy.fft.fft(chunk))
+            freqs = fftpk.fftfreq(len(FFT), (1.0/sampfreq))
+
+            freqs = freqs[range(len(FFT)//2)]
+
+            freqsHPF = freqs[freqs > HPF]
+            freqsLPF = freqs[freqs < LPF]
             
-        threshold = (max(total)) - (min(total))
+            indexHPF = int(max(np.where(freqs == freqsHPF[0])))
+            indexLPF = int(max(np.where(freqs == freqsLPF[len(freqsLPF)-1])))
+            
+            FFT = FFT[range(len(FFT)//2)]
+            
+            FFTF = FFT[indexHPF:indexLPF]
+            
+            total.append(np.sum(np.absolute(FFTF)))
+            
+        threshold = (max(total))
+        #threshold = (max(total)) - (min(total))
         return threshold * ratio
     
     
