@@ -8,11 +8,17 @@ import os
 import onset
 import easygram as ez
 import parsons
+import snaps
 from pathlib import Path
 
 def Song(file):
+    try:
+        os.mkdir(file.split(".")[0]) 
+    except:
+        pass
     p = Path(file)
-    directory = str(p.parent) + "/"
+    #directory = str(p.parent) + "/"
+    directory = file.split(".")[0] + "/"
     song = onset.Song(file)
     
     songName = file.split("/")[-1:][0]
@@ -32,9 +38,11 @@ def Song(file):
         
     alphaPeak = song.FindAlphaPeak(0,songTR)
     print("Song starts at " + str(alphaPeak) + " seconds.")
+    '''
     u2 = str(input("Press 1 to get a list of suggested BPMs. Press any other key to skip:\n"))
     if u2 == "1":
         onset.GetBPMS(song, song.CalculateThreshold_RMS())
+    '''
     
     bpm_user = float(input("Enter selected BPM: \n"))
     measure_user = int(input("Enter how many beats are in a bar: \n"))
@@ -60,12 +68,12 @@ def Song(file):
                 z_freq.append(z[j])
             
         peaks = [i * (60/bpm) * unitSize * song.sampfreq for i in x_all]
-        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksMelody" + "_" + songName.split(".")[0] + ".csv")
+        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksMelody.csv")
         
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
-        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotMelody_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataMelody_" + songName)
+        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotMelody.png", noteThreshold, song.GetRMS(), alphaPeak)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataMelody.csv")
         print("Done.")
         
     def Snare():
@@ -88,16 +96,16 @@ def Song(file):
         for i in x_all:
             peaks.append(i * (60/bpm)*unitSize * song.sampfreq)
             
-        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksSnare" + "_" + songName.split(".")[0] + ".csv")
+        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksSnare.csv")
         
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
-        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotSnare_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataSnare_" + songName)
+        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory,"plotSnare.png", noteThreshold, song.GetRMS(), alphaPeak)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataSnare.csv")
         print("Done.")
     
     def Bass():
-        noteThreshold = 0.6
+        noteThreshold = 0.5
         unitSize = 0.25
         # Continuous, Peaks, all bars, unit 0.25
         x_all, y_energy, z_freq  = [],[],[]
@@ -116,12 +124,12 @@ def Song(file):
         for i in x_all:
             peaks.append(i * (60/bpm)*unitSize * song.sampfreq)
             
-        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksBass" + "_" + songName.split(".")[0] + ".csv")
+        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksBass.csv")
         
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
-        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotBass_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataBass_" + songName)
+        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotBass.png", noteThreshold, song.GetRMS(), alphaPeak)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataBass.csv")
         print("Done.")
 
     def Hats():
@@ -144,15 +152,16 @@ def Song(file):
         for i in x_all:
             peaks.append(i * (60/bpm)*unitSize * song.sampfreq)
             
-        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksHats" + "_" + songName.split(".")[0] + ".csv")
+        onset.SavePeaks(peaks, song.sampfreq, 1, song.peakAlphaIndex, directory + "peaksHats.csv")
         
         pc_e,pc_f = parsons.GetPCode(x_all, y_energy),parsons.GetPCode(x_all, z_freq)
         x = [i*unitSize for i in x_all]
-        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotHats_" + songName, noteThreshold, song.GetRMS(), alphaPeak)
-        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory,"dataHats_" + songName)
+        ez.PlotComplete(x, pc_e, pc_f, bpm, maxBars, measure, unitSize, freqBands, directory, "plotHats.png", noteThreshold, song.GetRMS(), alphaPeak)
+        parsons.SaveCSV5D(x, pc_e,pc_f,y_energy,z_freq,directory, "dataHats.csv")
 
         print("Done.")
 
+    
     print("\nObtaining Melody...")
     Melody()
     
@@ -165,6 +174,8 @@ def Song(file):
     print("\nObtaining HiHats...")
     Hats()
     
+    snaps.Density(directory)
+    snaps.RateOfChange(directory)
     
 print("Drag and drop your song:")    
 Song(input().strip("\'"))

@@ -9,35 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def Easygram_2048(limits,song,bpm,barIn,barEnd,measure,unitSize):
-    '''
-    Easy spectrogram that uses Frequency Peaks and Frequency Bands to simplify the waveform information.
-
-    Parameters
-    ----------
-    limits : TYPE
-        Receive a list of frequency bands of same length.
-    song : TYPE
-        Song object from onset, used to localize the chunk.
-    bpm : TYPE
-        Bpm of the song.
-    barIn : TYPE
-        Bar Number for chunk start.
-    barEnd : TYPE
-         Bar Number for chunk end.
-    measure : TYPE
-        Number of beats in bar.
-    unitSize : TYPE
-        Grid division by beat size, 1/16 of 1/4 is 0.25.
-
-    Returns
-    -------
-    energy : TYPE
-        Total amount of energy in the chunk.
-    topFrequencies : TYPE
-        The frequency band(s) with highest energy.
-
-    TO DO: Add number of top frequencies > 1, add option to enable PlotPeaks2
-    '''
     energy, topFrequencies = [],[]
     unitStar = int(barIn * measure * (1/unitSize))
     amountOfUnits = int(barEnd * measure * (1/unitSize))
@@ -192,7 +163,7 @@ def PlotPart(x,y,maxBars,measure,unitSize,name):
     plt.show()
     
 def PlotComplete(x,y_e_pc,y_f_pc,bpm,maxBars,measure,unitSize,freqBands,plotPath,songName, tr, rms, peakAlpha):
-    name = plotPath + songName.split(".")[0] + ".png"
+    name = plotPath + songName
     title = "Name: " + songName.split(".")[0] + ", BPM: " + str(bpm) + ", FreqBands: " + str(freqBands[0])
     title = title + " to " + str(freqBands[len(freqBands)-1]) + " Hz, RMS: " + str(rms) + " dB"
     title = title + ", Threshold: " + str(tr) + ", Starts at: " + str(peakAlpha) + " sec"

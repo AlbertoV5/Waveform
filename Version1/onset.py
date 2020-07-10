@@ -14,7 +14,6 @@ def toWAV(mp3):
     wav = mp3.split(".")[0] + ".wav"
     sound = AudioSegment.from_mp3(mp3)
     sound.export(wav, format="wav")
-    print("Converted mp3 to wav.")
     return wav
 
 class Song():
@@ -23,7 +22,7 @@ class Song():
             songName = toWAV(songName)
             clear = True
             
-        print("Reading audio file...")
+        #print("Reading audio file...")
         audiofile = wavfile.read(songName)
         self.sampfreq, self.data = audiofile[0], audiofile[1]/32767 #16 bits
         self.peakAlphaIndex = 0
@@ -40,7 +39,6 @@ class Song():
         if end_sec != 0:
             self.data = self.data[int(start_sec * self.sampfreq):int(end_sec * self.sampfreq)]
             
-        print("\nAudio file was read.")
         if clear:
             os.remove(songName)
         
@@ -83,18 +81,36 @@ class Song():
         for i in self.notes: #notes as an array of start,end pairs
             try:
                 start = i[0] - x
-                end = i[1] + x
+                end = i[0] + x
                 noteSamples = self.data[start:end]
-                point = np.amax(np.absolute(noteSamples))
+                point = np.min(np.absolute(noteSamples))
             except:
                 start = i[0]
-                end = i[1]
+                end = i[0]
                 noteSamples = self.data[start:end]
-                point = np.amax(np.absolute(noteSamples))
+                point = np.min(np.absolute(noteSamples))
             
             transientPoint = np.max(np.where(np.absolute(noteSamples) == point)) + start
             self.pks.append(transientPoint)
             self.pksValue.append(point)
+        
+    def GetTruePeaks(self, x):
+        self.truepeaks = []
+        for i in self.notes:
+            range_ = x
+            unit = 64
+            rms = []
+            index = []
+            for j in range(range_//unit): 
+                start = i[0] - (range_) + unit*j 
+                end = start + unit
+                chunk = self.data[start:end]
+                peakChunk = FindPeaksSignal(chunk)
+                rms.append(sum(peakChunk)/len(peakChunk))
+                index.append(start)
+            
+            highChunk = index[rms.index(max(rms))]
+            self.truepeaks.append(highChunk)
         
     def GetBPM(self, minBPM = 100, maxBPM = 210, kind = "mode"):
         x = [i[0] for i in self.notes]
@@ -138,18 +154,39 @@ class Song():
                 elif bpm > maxBPM:
                     bpm = bpm/2
         return bpm 
+
+    def GetBPM_TruePeaks(self, minBPM = 100, maxBPM = 210, kind = "mode"):
+        d = [self.truepeaks[i+1]-self.truepeaks[i] for i in range(len(self.truepeaks)) if i < len(self.truepeaks)-1]
+        if kind == "mean":
+            beat_s = mean(d)/self.sampfreq
+        elif kind == "mode":
+            beat_s = mode(d)/self.sampfreq
+        elif kind == "median":
+            beat_s = median(d)/self.sampfreq
+        else:
+            print("Error.")
+        if beat_s == 0:
+            bpm = 0
+        else:
+            bpm = 60/beat_s
+            while bpm < minBPM or bpm > maxBPM:
+                if bpm < minBPM:
+                    bpm = bpm*2
+                elif bpm > maxBPM:
+                    bpm = bpm/2
+        return bpm 
     
     def CalculateThreshold_RMS(self):
         self.rms = GetRMS(self.data)
-        floor = -96
+        floor = -48
         if self.rms > -12:
-            tr = 0.85
+            tr = 0.9
         elif self.rms > -14 and self.rms <= -12:
             tr = 0.8
         elif self.rms > -16 and self.rms <= -14:
-            tr = 0.75
-        elif self.rms > -20 and self.rms <= -16:
             tr = 0.7
+        elif self.rms > -20 and self.rms <= -16:
+            tr = 0.65
         elif self.rms > -24 and self.rms <= -20:
             tr = 0.6
         elif self.rms > -30 and self.rms <= -24.:
@@ -157,8 +194,8 @@ class Song():
         else:
             tr = 0.8
             
-        #tr = 1 - (self.rms/floor)
-        print("Suggested ratio is: " + str(tr))
+        tr = 1 - (self.rms/floor)
+        #print("Suggested ratio is: " + str(tr))
         return int(tr * 10000)/10000
 
     def PlotPeaks(self):
@@ -246,6 +283,12 @@ def ReadChunk(chunk, threshold, LPF, HPF, sampfreq):
         frequency = -1
     return frequency
     
+def FindPeaksSignal(x):
+    peaks = [0]
+    for i in range(1,len(x)-1):
+        if abs(x[i]) >= abs(x[i - 1]) and abs(x[i]) >= abs(x[i+1]):
+            peaks.append(x[i])
+    return peaks
 
 def CalculateFFT_dB(chunk, sampfreq, HPF, LPF):
         
@@ -320,7 +363,7 @@ def CalculateThreshold_RMS(data):
     rms = GetRMS(data)
     floor = -96
     tr = 1 - (rms/floor)
-    print("Suggested ratio is: " + str(tr))
+    #print("Suggested ratio is: " + str(tr))
     return int(tr * 10000)/10000
 
 def CalculateThreshold_RMS2(data):
@@ -374,24 +417,18 @@ def median(List): #middle of the list
 
 def GetBPMS_All(song, tr):
     bpms = []
-    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 0, LPF = 240)
+    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 0, LPF = 120)
     song.GetPeaks(x = 1024)
     magicRatio = (128/129.19921875)
     bpms.append(int(song.GetBPM()*magicRatio*100)/100)
-    bpms.append(int(song.GetBPM_PKS()*100)/100)
-    song.GetNoteOnset(unit = 2048, chunk_size = 2048, threshold_ratio = tr, HPF = 14000, LPF = 16000)
-    song.GetPeaks(x = 1024)
-    bpms.append(int(song.GetBPM()*magicRatio*100)/100)
-    bpms.append(int(song.GetBPM_PKS()*100)/100)
-    song.GetNoteOnset(unit = 1024, chunk_size = 1024, threshold_ratio = tr, HPF = 0, LPF = 240)
+    bpms.append(int(song.GetBPM_PKS()*magicRatio*100)/100)
+    print("Note onsets:", len(song.notes))
+    song.GetNoteOnset(unit = 1024, chunk_size = 1024, threshold_ratio = tr, HPF = 0, LPF = 120)
     song.GetPeaks(x = 512)
     bpms.append(int(song.GetBPM()*magicRatio*100)/100)
-    bpms.append(int(song.GetBPM_PKS()*100)/100)
-    song.GetNoteOnset(unit = 1024, chunk_size = 1024, threshold_ratio = tr, HPF = 14000, LPF = 16000)
-    song.GetPeaks(x = 512)
-    bpms.append(int(song.GetBPM()*magicRatio*100)/100)
-    bpms.append(int(song.GetBPM_PKS()*100)/100)
-    print(bpms)
+    bpms.append(int(song.GetBPM_PKS()*magicRatio*100)/100)
+    print("Note onsets:", len(song.notes))
+    
     return bpms
 
 def GetBPMS(song, tr):

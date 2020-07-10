@@ -62,12 +62,10 @@ def SaveCSV3D(x, e, f, path, name):
         file.write(csv)
     
 def SaveCSV5D(x, e_pc, f_pc, energy, frequency, path, name):
-    csv = "Position,EnergyPC,FrequencyPC,Energy,Frequency"
-    name = name.split(".")[0]
-        
+    csv = "Position,EnergyPC,FrequencyPC,Energy,Frequency"        
     for i in range(len(x)):
         csv = csv + "\n" + str(x[i]) + "," + str(e_pc[i]) + "," + str(f_pc[i]) + "," + str(energy[i]) + "," + str(frequency[i])
         
-    with open(path + name + ".csv", "w+") as file:
+    with open(path + name, "w+") as file:
         file.write(csv)
         
