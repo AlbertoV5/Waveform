@@ -84,12 +84,12 @@ class Song():
                 start = i[0] - x
                 end = i[0] + x
                 noteSamples = self.data[start:end]
-                point = np.min(np.absolute(noteSamples))
+                point = np.max(np.absolute(noteSamples))
             except:
                 start = i[0]
                 end = i[1]
                 noteSamples = self.data[start:end]
-                point = np.min(np.absolute(noteSamples))
+                point = np.max(np.absolute(noteSamples))
             
             transientPoint = np.max(np.where(np.absolute(noteSamples) == point)) + start
             self.pks.append(transientPoint)
