@@ -18,6 +18,7 @@ def toWAV(mp3):
 
 class Song():
     def __init__(self, songName, start_sec = 0, end_sec = 0):
+        clear = False
         if ".mp3" in songName:
             songName = toWAV(songName)
             clear = True
