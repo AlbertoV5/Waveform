@@ -61,7 +61,7 @@ class Song():
         sus, on, self.notes = -1, -1, []
         note_on = 0
         song = self.data[self.peakAlphaIndex:]
-        threshold = Get_Threshold(song, chunk_size, threshold_ratio, HPF, LPF, self.sampfreq, self.rms)
+        threshold = Get_Threshold(song, chunk_size, threshold_ratio, HPF, LPF, self.sampfreq)
         #print("Ratio: " + str(threshold_ratio) + " = Threshold: " + str(threshold))
                 
         for i in range(self.length//unit):
@@ -87,7 +87,7 @@ class Song():
                 point = np.min(np.absolute(noteSamples))
             except:
                 start = i[0]
-                end = i[0]
+                end = i[1]
                 noteSamples = self.data[start:end]
                 point = np.min(np.absolute(noteSamples))
             
@@ -312,7 +312,7 @@ def CalculateFFT_dB(chunk, sampfreq, HPF, LPF):
     return freqsF, FFTF 
 
 
-def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq, rms):
+def Get_Threshold(data, chunk_size, ratio, HPF, LPF, sampfreq):
         #Find the highest power in the frequency range in the whole data
         #Use it as threshold multiplied by the ratio received
         total = []
